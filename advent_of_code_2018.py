@@ -50,12 +50,12 @@ import collections
 import dataclasses
 import functools
 import heapq
+import importlib
 import itertools
 import math
 import re
 import textwrap
-from typing import Any, Callable, Dict, List
-from typing import Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple
 
 import advent_of_code_hhoppe  # https://github.com/hhoppe/advent-of-code-hhoppe/blob/main/advent_of_code_hhoppe/__init__.py
 import hhoppe_tools as hh  # https://github.com/hhoppe/hhoppe-tools/blob/main/hhoppe_tools/__init__.py
@@ -78,7 +78,8 @@ YEAR = 2018
 PROFILE = 'google.Hugues_Hoppe.965276'
 # PROFILE = 'github.hhoppe.1452460'
 TAR_URL = f'https://github.com/hhoppe/advent_of_code_{YEAR}/raw/main/data/{PROFILE}.tar.gz'
-hh.run(f"if [ ! -d data/{PROFILE} ]; then (mkdir -p data && cd data && wget -q {TAR_URL} && tar xzf {PROFILE}.tar.gz); fi")
+hh.run(f"if [ ! -d data/{PROFILE} ]; then (mkdir -p data && cd data &&"
+       f" wget -q {TAR_URL} && tar xzf {PROFILE}.tar.gz); fi")
 INPUT_URL = f'data/{PROFILE}/{{year}}_{{day:02d}}_input.txt'
 ANSWER_URL = f'data/{PROFILE}/{{year}}_{{day:02d}}{{part_letter}}_answer.txt'
 
@@ -162,7 +163,7 @@ class Machine:
   def read_instructions(self, s):
     lines = s.strip('\n').split('\n')
     if lines[0].startswith('#ip'):
-      self.ip_register = int(re.fullmatch('#ip (\d+)', lines[0]).group(1))
+      self.ip_register = int(re.fullmatch(r'#ip (\d+)', lines[0]).group(1))
       lines = lines[1:]
     self.instructions = []
     for line in lines:
@@ -321,7 +322,7 @@ def process1(s, part2=False, visualize=False):  # Faster with numpy.
   grid = np.full(shape, 0)
   for line in lines:
     claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
-    grid[t : t + h, l : l + w] += 1
+    grid[t: t + h, l: l + w] += 1
 
   if not part2:
     return np.count_nonzero(grid >= 2)
@@ -329,13 +330,13 @@ def process1(s, part2=False, visualize=False):  # Faster with numpy.
   claim = None
   for line in lines:
     claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
-    if np.all(grid[t : t + h, l : l + w] == 1):
+    if np.all(grid[t: t + h, l: l + w] == 1):
       break
 
   if visualize:
     image1 = media.to_rgb(grid * 1.0)
     image2 = image1.copy()
-    image2[t : t + h, l : l + w] = (0.9, 0.9, 0.0)
+    image2[t: t + h, l: l + w] = (0.9, 0.9, 0.0)
     video = [image1, image2]
     shrink = 2
     if shrink > 1:
@@ -531,7 +532,7 @@ def process1(s, part2=False):  # Fastest; nested loops in numba.
     for omit in range(26):
       l = []
       for code in codes:
-        if code != omit and code != omit + 32:
+        if code not in (omit, omit + 32):
           if l and abs(code - l[-1]) == 32:
             l.pop()
           else:
@@ -1098,8 +1099,8 @@ def process1(s, part2=False, visualize=False):
   if visualize:
     image = media.to_rgb(power * 1.0, cmap='bwr')
     image2 = image.copy()
-    image2[yx_largest[0] : yx_largest[0] + best_size,
-           yx_largest[1] : yx_largest[1] + best_size] *= 0.7
+    image2[yx_largest[0]: yx_largest[0] + best_size,
+           yx_largest[1]: yx_largest[1] + best_size] *= 0.7
     image = image.repeat(2, axis=0).repeat(2, axis=1)
     image2 = image2.repeat(2, axis=0).repeat(2, axis=1)
     media.show_video([image, image2], codec='gif', fps=1)
@@ -1173,15 +1174,15 @@ def process1(s, part2=False, visualize=False):
     state = ''.join(rules[''.join(w)] for w in hh.sliding_window(state, 5))
     states.append(state)
     if part2 and len(states) >= 2:
-      if any(states[-2] == states[-1][2 + shift : 2 + shift + len(states[-2])]
+      if any(states[-2] == states[-1][2 + shift: 2 + shift + len(states[-2])]
              for shift in (-1, 0, 1)):
         break
 
   if visualize:
     padded_states = []
-    for index in range(len(states)):
+    for index, state in enumerate(states):
       pad_len = (len(states) - 1 - index) * 2
-      padded_states.append('.' * pad_len + states[index] + '.' * pad_len)
+      padded_states.append('.' * pad_len + state + '.' * pad_len)
     grid = np.array([list(state) for state in padded_states]) == '#'
     xmin, xmax = np.nonzero(grid.any(axis=0))[0][[0, -1]]
     grid = grid[:, max(xmin - 4, 0):xmax + 5]
@@ -1191,8 +1192,8 @@ def process1(s, part2=False, visualize=False):
   if not part2:
     return sum_pots(states[-1], pad_len=2 * (len(states) - 1))
 
-  sum_pots2 = sum_pots(states[-1], pad_len = 2 * (len(states) - 1))
-  sum_pots1 = sum_pots(states[-2], pad_len = 2 * (len(states) - 2))
+  sum_pots2 = sum_pots(states[-1], pad_len=2 * (len(states) - 1))
+  sum_pots1 = sum_pots(states[-2], pad_len=2 * (len(states) - 2))
   diff_sum_pots = sum_pots2 - sum_pots1
   remaining_generations = 50000000000 - (len(states) - 1)
   return sum_pots2 + diff_sum_pots * remaining_generations
@@ -1268,7 +1269,7 @@ def process1(s, part2=False, verbose=False, visualize=False):
 
   if visualize:
     cmap = {' ': (250,) * 3, '+': (140, 140, 140),
-            **{ch: (180,)* 3 for ch in r'|-\/'}}
+            **{ch: (180,) * 3 for ch in r'|-\/'}}
     image0 = np.array(
       [cmap[e] for e in grid.flat], dtype=np.uint8).reshape(*grid.shape, 3)
   images = []
@@ -1299,9 +1300,8 @@ def process1(s, part2=False, verbose=False, visualize=False):
             images = [images[0]] * 20 + images + [images[-1]] * 40
             media.show_video(images, codec='gif', fps=20)
             return
-          else:
-            print(f'first collision at iteration={iteration}')
-            return f'{new_yx[1]},{new_yx[0]}'
+          print(f'first collision at iteration={iteration}')
+          return f'{new_yx[1]},{new_yx[0]}'
         for crashed_cart in [cart, cart2]:
           crashed_cart.yx = (-1, -1)
         continue
@@ -1543,13 +1543,13 @@ puzzle.verify(2, process2)  # ~190 ms.
 
 
 # %%
-def process2(s):  # Try using Knuth–Morris–Pratt (KMP); not a win for 6-subseq.
+def process2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
   def func(pattern):
 
-    # Precompute offsets for Knuth–Morris–Pratt (KMP) subsequence search; see
+    # Precompute offsets for Knuth-Morris-Pratt (KMP) subsequence search; see
     # https://www.py4u.net/discuss/12693.
     def kmp_offsets(subseq):
       m = len(subseq)
@@ -1612,8 +1612,7 @@ def process2(s):  # Try using Knuth–Morris–Pratt (KMP); not a win for 6-subs
           j += 1
         if j == m:
           return prev_num + (i - j)
-          j = offsets[j - 1]
-        elif i < n and seq[i] != subseq[j]:
+        if i < n and seq[i] != subseq[j]:
           if j != 0:
             j = offsets[j - 1]
           else:
@@ -1808,7 +1807,7 @@ def simulate_combat(s, verbose=False,
       if grid[yx2] == '.':
         yield yx2
 
-  def adjacent_towards_opponent(grid, unit_yx, inrange):
+  def adjacent_towards_opponent(inrange):
     # BFS from unit until yx in inrange; record all others at same distance.
     next_queue = [unit.yx]
     visited = set()
@@ -1861,7 +1860,7 @@ def simulate_combat(s, verbose=False,
                    for yx in empty_adjacent_yxs(u.yx)}
         if not inrange:  # No accessible opponent.
           continue
-        best_adjacent = adjacent_towards_opponent(grid, unit.yx, inrange)
+        best_adjacent = adjacent_towards_opponent(inrange)
         if best_adjacent is None:
           continue
         check_eq(grid[unit.yx], unit.ch)
@@ -2156,9 +2155,9 @@ def process1(s, part2=False):
     opcode, *operands = codes
     assert 0 <= opcode < num_operations
     num_compatible = 0
-    for operation in machine.operations:
+    for operation, function in machine.operations.items():
       registers = before.copy()
-      machine.operations[operation](registers, operands)
+      function(registers, operands)
       if registers == after:
         num_compatible += 1
       else:
@@ -2282,7 +2281,8 @@ def process1(s, part2=False, visualize=False):
     return None
 
   desired = '~' if part2 else '~|'
-  return sum(1 for yx in grid if ymin <= yx[0] <= ymax and grid[yx] in desired)
+  return sum(1 for yx, ch in grid.items()
+             if ymin <= yx[0] <= ymax and ch in desired)
 
 
 check_eq(process1(s1), 57)
@@ -2342,7 +2342,7 @@ def process1(s, num_minutes=10, part2=False, visualize=False):
     return num_trees * num_lumberyards
 
   if not part2:
-    for minute in range(num_minutes):
+    for _ in range(num_minutes):
       evolve_grid()
     return resource_value()
 
@@ -2361,7 +2361,8 @@ def process1(s, num_minutes=10, part2=False, visualize=False):
     if config in configs and not period:
       period = configs[config] - remaining_minutes
       remaining_minutes = remaining_minutes % period
-      # print(f'At minute {minute}, found cycle with period {period}.')
+      if 0:
+        print(f'At minute {minute}, found cycle with period {period}.')
     if not remaining_minutes:
       break
     configs[config] = remaining_minutes
@@ -2411,12 +2412,6 @@ setr 1 0 0
 seti 8 0 4
 seti 9 0 5
 """
-
-# %%
-if 0:
-  for i, line in enumerate(puzzle.input.splitlines()[1:17]):
-    print(f'{i:2} {line}')
-
 
 # %%
 # Part 1:
@@ -2604,9 +2599,9 @@ def process1(s, part2=False, visualize=False):
         else:
           raise AssertionError(ch)
       return doors_s, doors_e, {(y, x)}
-    else:  # isinstance(elem, list)
-      # Return the three unions of the respective sets from all child nodes.
-      return (set().union(*tup) for tup in zip(*map(traverse, elem)))
+    # isinstance(elem, list)
+    # Return the three unions of the respective sets from all child nodes.
+    return (set().union(*tup) for tup in zip(*map(traverse, elem)))
 
   doors_s, doors_e, _ = traverse(l)
 
@@ -2708,9 +2703,12 @@ if 0:  # Due to backtracking, one cannot simply look for longest expansion.
 puzzle = advent.puzzle(day=21)
 
 # %%
-if 0:
+def test():
   for i, line in enumerate(puzzle.input.splitlines()[1:]):
     print(f'{i:2} {line}')
+
+if 0:
+  test()
 
 #  0 seti 123 0 4       # e = 123
 #  1 bani 4 456 4       # e &= 456
@@ -2792,7 +2790,7 @@ def test():
   def simulate(max_count=10_000_000, verbose=False):
     d = 65536
     e = 16098955
-    for count in range(max_count):
+    for _ in range(max_count):
       e += d & 255
       e &= 16777215  # 0xFFFFFF (24-bit)
       e *= 65899
@@ -2805,7 +2803,6 @@ def test():
         e = 16098955
         continue
       d //= 256
-    return None
 
   def count_for(a, max_count=10_000_000, verbose=False):
     for count, e in enumerate(simulate(verbose=verbose)):
@@ -2813,6 +2810,7 @@ def test():
         return None
       if e == a:
         return count + 1
+    return None
 
   def sweep(max_a, max_count):
     for a in range(max_a):
@@ -2820,11 +2818,12 @@ def test():
       if count:
         hh.show(a, count)
 
-  # sweep(max_a=1_000_000, max_count=1_000)
-  # sweep(max_a=16_777_216, max_count=10)
-  # a = 2014420, count = 5
-  # a = 12063646, count = 8
-  # a = 15823996, count = 2
+  if 0:
+    sweep(max_a=1_000_000, max_count=1_000)
+    sweep(max_a=16_777_216, max_count=10)
+    # a = 2014420, count = 5
+    # a = 12063646, count = 8
+    # a = 15823996, count = 2
 
   for a in [15823996]:
     count = count_for(a, verbose=True)
@@ -2849,7 +2848,7 @@ def test():
 # test()
 
 # %%
-def process1(s, part2=False, verbose=False):
+def process1(s, part2=False):
   machine = Machine()
   machine.read_instructions(s)
 
@@ -2924,16 +2923,15 @@ target: 10,10
 # https://www.reddit.com/r/adventofcode/comments/a8i1cy/comment/ecazvbe
 def process1(s, part2=False, pad=60):  # Using networkx; slower.
   rocky, wet, narrow = 0, 1, 2
+  del narrow  # unused
   torch, gear, neither = 0, 1, 2
   valid_items = {rocky: (torch, gear), wet: (gear, neither),
                  neither: (torch, neither)}
-  valid_regions = {torch: (rocky, narrow), gear: (rocky, wet),
-                   neither: (wet, narrow)}
 
   def get_cave():
     lines = iter(line.strip() for line in s.strip('\n').split('\n'))
     depth = int(next(lines)[len('depth: '):])
-    target = tuple([int(n) for n in next(lines)[len('target: '):].split(',')])
+    target = tuple(int(n) for n in next(lines)[len('target: '):].split(','))
     return depth, target
 
   def generate_grid(depth, shape):
@@ -2977,7 +2975,7 @@ def process1(s, part2=False, pad=60):  # Using networkx; slower.
   if not part2:
     shape = (target[0] + 1, target[1] + 1)
     grid = generate_grid(depth, shape)
-    return sum([v[2] for v in grid.values()])
+    return sum(v[2] for v in grid.values())
 
   import networkx as nx
   shape = (target[0] + pad, target[1] + pad)
@@ -2987,15 +2985,12 @@ def process1(s, part2=False, pad=60):  # Using networkx; slower.
   if use_astar:
     return nx.astar_path_length(
         graph, (0, 0, torch), (*target, torch), heuristic=cost_lower_bound)
-  else:
-    return nx.dijkstra_path_length(
-        graph, (0, 0, torch), (*target, torch))
+  return nx.dijkstra_path_length(graph, (0, 0, torch), (*target, torch))
 
 
 check_eq(process1(s1), 114)
 puzzle.verify(1, process1)  # ~15 ms.
 
-import importlib
 if not importlib.util.find_spec('networkx'):
   print('Module networkx is unavailable.')
 else:
@@ -3082,7 +3077,7 @@ def process1(s, part2=False, pad=60, visualize=False):  # With numba.
   grid = construct_grid(shape)
   distance, path = dijkstra(grid, target_yx, visualize)
   if visualize:
-    cmap = {0: (150, 0 , 0), 1: (0, 150, 0), 2: (0, 0, 150)}
+    cmap = {0: (150, 0, 0), 1: (0, 150, 0), 2: (0, 0, 150)}
     image = np.array([cmap[e] for e in grid.ravel()], dtype=np.uint8)
     image = image.reshape(*grid.shape, 3)
     image2 = image.copy()
@@ -3140,7 +3135,7 @@ pos=<10,10,10>, r=5
 
 
 # %%
-def process1(s, part2=False, verbose=False):
+def process1(s, part2=False):
   positions, radii = [], []
   for line in s.strip('\n').split('\n'):
     pattern = r'pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)'
@@ -3185,9 +3180,9 @@ def process1(s, part2=False, verbose=False):
       i = radii.argmax()
       return np.count_nonzero(
           abs(positions - positions[i]).sum(axis=1) <= radii[i])
-    else:  # Sanity check on polytopes.
-      polytope = polytopes[radii.argmax()]
-      return sum(1 for p in positions if point_in_polytope(p, polytope))
+    # Sanity check on polytopes.
+    polytope = polytopes[radii.argmax()]
+    return sum(1 for p in positions if point_in_polytope(p, polytope))
 
   # Estimate an initial position with a high count of overlapping octahedra.
   good_position = tuple(max(positions, key=num_in_range))
@@ -3203,7 +3198,7 @@ def process1(s, part2=False, verbose=False):
     # distant from good_position.
     def omit_far_halfspaces(polytope, good_ds):
       return tuple(d if abs(d - good_d) < distance_threshold else math.inf
-                  for d, good_d in zip(polytope, good_ds))
+                   for d, good_d in zip(polytope, good_ds))
 
     polytopes2 = [omit_far_halfspaces(p, good_ds) for p in polytopes]
     polytopes2 = [p for p in polytopes2 if not is_infinite(p)]
@@ -3220,8 +3215,8 @@ def process1(s, part2=False, verbose=False):
         if is_empty(piece2):
           continue
         new_pieces[piece2] = max(count + 1,
-                                pieces.get(piece2, 0),
-                                new_pieces.get(piece2, 0))
+                                 pieces.get(piece2, 0),
+                                 new_pieces.get(piece2, 0))
       pieces.update(new_pieces)
       pieces[polytope] = max(1, pieces.get(polytope, 0))
       if prune_allowance:
