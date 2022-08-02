@@ -604,8 +604,8 @@ def process1(s, part2=False, max_sum=10_000, visualize=False):
     count, i = max((c, i) for i, c in counts.items()
                    if i not in unbounded | {-1})
     if visualize:
-      np.random.seed(0)
-      cmap = np.uint8(np.random.choice(range(30, 150), (len(yxs) + 1, 3)))
+      cmap = np.uint8(np.random.default_rng(0).choice(
+          range(30, 150), (len(yxs) + 1, 3)))
       image = cmap[closest + 1]
       unb = (closest[..., None] == np.array(list(unbounded))).sum(axis=-1) > 0
       image[unb] += 105
