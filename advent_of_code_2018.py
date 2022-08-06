@@ -46,7 +46,10 @@
 # !pip install -q advent-of-code-hhoppe hhoppe-tools mediapy numba
 
 # %%
+from __future__ import annotations
+
 import collections
+from collections.abc import Callable
 import dataclasses
 import functools
 import heapq
@@ -55,7 +58,6 @@ import itertools
 import math
 import re
 import textwrap
-from typing import Dict, List, Optional, Set, Tuple
 
 import advent_of_code_hhoppe  # https://github.com/hhoppe/advent-of-code-hhoppe/blob/main/advent_of_code_hhoppe/__init__.py
 import hhoppe_tools as hh  # https://github.com/hhoppe/hhoppe-tools/blob/main/hhoppe_tools/__init__.py
@@ -123,25 +125,26 @@ check_eq = hh.check_eq
 @dataclasses.dataclass
 class Machine:
   num_registers: int = 6
-  registers = None
-  ip_register: Optional[int] = None
-  instructions = None
+  registers: list[int] = []
+  ip_register: int | None = None
+  instructions: list[Machine.Instruction] = []
   ip: int = 0
 
   @dataclasses.dataclass
   class Instruction:
     operation: str
-    operands: List[int]
+    operands: tuple[int, ...]
 
-  def __post_init__(self):
+  def __post_init__(self) -> None:
     self.registers = [0] * self.num_registers
 
-    def assign(registers, operands, value):
+    def assign(registers: list[int], operands: tuple[int, ...],
+               value: int | bool) -> None:
       output = operands[2]
       assert 0 <= output < len(registers)
       registers[output] = int(value)
 
-    self.operations = {
+    self.operations: dict[str, Callable[..., None]] = {
         'addr': lambda r, o: assign(r, o, r[o[0]] + r[o[1]]),
         'addi': lambda r, o: assign(r, o, r[o[0]] + o[1]),
         'mulr': lambda r, o: assign(r, o, r[o[0]] * r[o[1]]),
@@ -160,7 +163,7 @@ class Machine:
         'eqrr': lambda r, o: assign(r, o, r[o[0]] == r[o[1]]),
     }
 
-  def read_instructions(self, s):
+  def read_instructions(self, s: str) -> None:
     lines = s.strip('\n').split('\n')
     if lines[0].startswith('#ip'):
       self.ip_register = int(re.fullmatch(r'#ip (\d+)', lines[0]).group(1))
@@ -168,11 +171,11 @@ class Machine:
     self.instructions = []
     for line in lines:
       operation, *operands = line.split()
-      operands = tuple(map(int, operands))
-      assert operation in self.operations and len(operands) == 3
-      self.instructions.append(self.Instruction(operation, operands))
+      operands2 = tuple(map(int, operands))
+      assert operation in self.operations and len(operands2) == 3
+      self.instructions.append(self.Instruction(operation, operands2))
 
-  def run_instruction(self, verbose=False):
+  def run_instruction(self, verbose: bool = False) -> None:
     if self.ip_register is not None:
       self.registers[self.ip_register] = self.ip
     instruction = self.instructions[self.ip]
@@ -731,8 +734,8 @@ def process1(s, part2=False):
 
   @dataclasses.dataclass
   class TreeNode:
-    children: List['TreeNode']
-    metadatas: List[int]
+    children: list[TreeNode]
+    metadatas: list[int]
 
   values = map(int, s.split())
 
@@ -1119,7 +1122,9 @@ puzzle.verify(2, process2)  # ~70 ms.
 _ = process2(puzzle.input, visualize=True)
 
 # %% [markdown]
-# The blinking (darkened) region at the lower-right indicates the square with the largest sum of values in the image.  (Blue indicates small values; red indicates large values.)
+# The blinking (darkened) region at the lower-right indicates the square
+# with the largest sum of values in the image.
+# (Blue indicates small values; red indicates large values.)
 
 # %% [markdown]
 # <a name="day12"></a>
@@ -1248,7 +1253,7 @@ def process1(s, part2=False, verbose=False, visualize=False):
 
   @dataclasses.dataclass
   class Cart:
-    yx: Tuple[int, int]
+    yx: tuple[int, int]
     direction: str  # '<', '>', 'v', or '^'.
     next_turn: int = 0  # Three states: 0=left, 1=straight, 2=right.
 
@@ -1783,7 +1788,7 @@ def simulate_combat(s, verbose=False,
 
   @dataclasses.dataclass
   class Unit:
-    yx: Tuple[int, int]
+    yx: tuple[int, int]
     ch: str  # 'E' (Elf) or 'G' (Goblin).
     hit_points: int = 200
 
@@ -1910,7 +1915,7 @@ def simulate_combat(s, visualize=False, elf_attack_power=3,
 
   @dataclasses.dataclass
   class Unit:
-    yx: Tuple[int, int]
+    yx: tuple[int, int]
     ch: str  # 'E' (Elf) or 'G' (Goblin).
     hit_points: int = 200
 
@@ -3381,15 +3386,15 @@ def simulate_immune_fight(s, verbose=False, boost=0, immune_must_win=False):
 
   @dataclasses.dataclass
   class Group:
-    army: 'Army'
+    army: Army
     id: int
     units: int
     hit_points: int  # (per_unit)
     attack_damage: int  # (per unit)
     attack_type: str
     initiative: int  # Higher initiative attacks first and wins ties.
-    attributes: Dict[str, Set]  # ['immune'] and ['weak']
-    target: 'Group'
+    attributes: dict[str, set[str]]  # ['immune'] and ['weak']
+    target: Group
     targeted: bool
 
     def __init__(self, army, id, line):
@@ -3420,7 +3425,7 @@ def simulate_immune_fight(s, verbose=False, boost=0, immune_must_win=False):
   @dataclasses.dataclass
   class Army:
     name: str
-    groups: List[Group]
+    groups: list[Group]
 
     def __init__(self, s):
       lines = s.split('\n')
