@@ -125,9 +125,9 @@ check_eq = hh.check_eq
 @dataclasses.dataclass
 class Machine:
   num_registers: int = 6
-  registers: list[int] = []
+  registers: list[int] = dataclasses.field(default_factory=lambda: [])
   ip_register: int | None = None
-  instructions: list[Machine.Instruction] = []
+  instructions: list[Machine.Instruction] = dataclasses.field(default_factory=lambda: [])
   ip: int = 0
 
   @dataclasses.dataclass
@@ -3613,7 +3613,7 @@ s4 = """
 def process1(s):  # Slower version.
   points = [tuple(map(int, l.split(','))) for l in s.strip('\n').split('\n')]
 
-  union_find = hh.UnionFind()
+  union_find = hh.UnionFind[int]()
   num_edges = 0
   for i in range(len(points)):
     for j in range(i + 1, len(points)):
@@ -3638,7 +3638,7 @@ puzzle.verify(1, process1)  # ~740 ms.
 def process1(s):  # Faster version, using numpy to identify the graph edges.
   points = [[int(t) for t in l.split(',')] for l in s.strip('\n').split('\n')]
   points = np.array(points)
-  union_find = hh.UnionFind()
+  union_find = hh.UnionFind[int]()
   edges = abs(points[None] - points.reshape(-1, 1, 4)).sum(axis=-1) <= 3
   for i, j in np.argwhere(edges):
     union_find.union(i, j)
