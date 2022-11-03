@@ -125,9 +125,9 @@ check_eq = hh.check_eq
 @dataclasses.dataclass
 class Machine:
   num_registers: int = 6
-  registers: list[int] = dataclasses.field(default_factory=lambda: [])
+  registers: list[int] = dataclasses.field(default_factory=list)
   ip_register: int | None = None
-  instructions: list[Machine.Instruction] = dataclasses.field(default_factory=lambda: [])
+  instructions: list[Machine.Instruction] = dataclasses.field(default_factory=list)
   ip: int = 0
 
   @dataclasses.dataclass
