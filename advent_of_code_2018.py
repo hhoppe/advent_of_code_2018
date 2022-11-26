@@ -58,6 +58,7 @@ import itertools
 import math
 import re
 import textwrap
+from typing import Any
 
 import advent_of_code_hhoppe  # https://github.com/hhoppe/advent-of-code-hhoppe/blob/main/advent_of_code_hhoppe/__init__.py
 import hhoppe_tools as hh  # https://github.com/hhoppe/hhoppe-tools/blob/main/hhoppe_tools/__init__.py
@@ -94,7 +95,7 @@ if 0:
   hh.run(f"if [ '{PROFILE}' = 'google.Hugues_Hoppe.965276' ]; then mkdir -p ~/.config/aocd && echo 53616... >~/.config/aocd/token; fi")
   hh.run(f"if [ '{PROFILE}' = 'github.hhoppe.1452460' ]; then mkdir -p ~/.config/aocd; echo 53616... >~/.config/aocd/token; fi")
   hh.run('pip install -q advent-of-code-data')
-  import aocd
+  import aocd  # pylint: disable=unused-import # noqa
 
 # %%
 try:
@@ -116,6 +117,7 @@ hh.adjust_jupyterlab_markdown_width()
 
 # %%
 check_eq = hh.check_eq
+_ORIGINAL_GLOBALS = list(globals())
 
 
 # %% [markdown]
@@ -124,6 +126,7 @@ check_eq = hh.check_eq
 # %%
 @dataclasses.dataclass
 class Machine:
+  """Abstract machine used in several puzzles."""
   num_registers: int = 6
   registers: list[int] = dataclasses.field(default_factory=list)
   ip_register: int | None = None
@@ -203,18 +206,18 @@ puzzle = advent.puzzle(day=1)
 
 
 # %%
-def process1(s):
+def day1_part1(s):
   entries = map(int, s.replace(', ', '\n').strip('\n').split('\n'))
   return sum(entries)
 
-check_eq(process1('+1, +1, +1'), 3)
-check_eq(process1('+1, +1, -2'), 0)
-check_eq(process1('-1, -2, -3'), -6)
-puzzle.verify(1, process1)  # ~0 ms.
+check_eq(day1_part1('+1, +1, +1'), 3)
+check_eq(day1_part1('+1, +1, -2'), 0)
+check_eq(day1_part1('-1, -2, -3'), -6)
+puzzle.verify(1, day1_part1)  # ~0 ms.
 
 
 # %%
-def process2(s):
+def day1_part2(s):
   entries = map(int, s.replace(', ', '\n').strip('\n').split('\n'))
   total = 0
   found = set()
@@ -225,11 +228,11 @@ def process2(s):
       return total
   assert False
 
-check_eq(process2('+1, -1'), 0)
-check_eq(process2('+3, +3, +4, -2, -4'), 10)
-check_eq(process2('-6, +3, +8, +5, -6'), 5)
-check_eq(process2('+7, +7, -2, -7, -4'), 14)
-puzzle.verify(2, process2)  # ~30 ms.
+check_eq(day1_part2('+1, -1'), 0)
+check_eq(day1_part2('+3, +3, +4, -2, -4'), 10)
+check_eq(day1_part2('-6, +3, +8, +5, -6'), 5)
+check_eq(day1_part2('+7, +7, -2, -7, -4'), 14)
+puzzle.verify(2, day1_part2)  # ~30 ms.
 
 # %% [markdown]
 # <a name="day2"></a>
@@ -245,7 +248,7 @@ puzzle = advent.puzzle(day=2)
 
 
 # %%
-def process1(s):
+def day2(s):
   sum_twice = sum_thrice = 0
   for id in s.split():
     counts = collections.Counter(id)
@@ -253,12 +256,12 @@ def process1(s):
     sum_thrice += 3 in counts.values()
   return sum_twice * sum_thrice
 
-check_eq(process1('abcdef bababc abbcde abcccd aabcdd abcdee ababab'), 4 * 3)
-puzzle.verify(1, process1)  # ~2 ms.
+check_eq(day2('abcdef bababc abbcde abcccd aabcdd abcdee ababab'), 4 * 3)
+puzzle.verify(1, day2)  # ~2 ms.
 
 
 # %%
-def process2(s):
+def day2_part2(s):
   candidates = set()
   for id in s.split():
     for pos in range(len(id)):
@@ -268,8 +271,8 @@ def process2(s):
       candidates.add(id2)
   return None
 
-check_eq(process2('abcde fghij klmno pqrst fguij axcye wvxyz'), 'fgij')
-puzzle.verify(2, process2)  # ~4 ms.
+check_eq(day2_part2('abcde fghij klmno pqrst fguij axcye wvxyz'), 'fgij')
+puzzle.verify(2, day2_part2)  # ~4 ms.
 
 # %% [markdown]
 # <a name="day3"></a>
@@ -285,10 +288,10 @@ puzzle = advent.puzzle(day=3)
 
 
 # %%
-def process1(s, part2=False, check_single_solution=False):
+def day3a(s, part2=False, check_single_solution=False):
   lines = s.strip('\n').split('\n')
   pattern = r'#(\d+) @ (\d+),(\d+): (\d+)x(\d+)'
-  grid = collections.defaultdict(int)
+  grid: dict[tuple[int, int], int] = collections.defaultdict(int)
   for line in lines:
     claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
     for y in range(t, t + h):
@@ -298,7 +301,7 @@ def process1(s, part2=False, check_single_solution=False):
   if not part2:
     return sum(value >= 2 for value in grid.values())
 
-  found = []
+  found: list[int] = []
   for line in lines:
     claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
     if all(grid[y, x] == 1 for y in range(t, t + h) for x in range(l, l + w)):
@@ -306,19 +309,20 @@ def process1(s, part2=False, check_single_solution=False):
       if not check_single_solution:
         break
 
-  return (lambda x: x)(*found)
+  check_eq(len(found), 1)
+  return found[0]
 
 
-check_eq(process1('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 4)
-puzzle.verify(1, process1)  # ~300 ms.
+check_eq(day3a('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 4)
+puzzle.verify(1, day3a)  # ~300 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
-puzzle.verify(2, process2)  # ~300 ms.
+day3_part2a = functools.partial(day3a, part2=True)
+check_eq(day3_part2a('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
+puzzle.verify(2, day3_part2a)  # ~300 ms.
 
 
 # %%
-def process1(s, part2=False, visualize=False):  # Faster with numpy.
+def day3(s, part2=False, visualize=False):  # Faster with numpy.
   lines = s.strip('\n').split('\n')
   pattern = r'#(\d+) @ (\d+),(\d+): (\d+)x(\d+)'
   shape = (1000, 1000)
@@ -330,7 +334,7 @@ def process1(s, part2=False, visualize=False):  # Faster with numpy.
   if not part2:
     return np.count_nonzero(grid >= 2)
 
-  claim = None
+  claim = -1
   for line in lines:
     claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
     if np.all(grid[t: t + h, l: l + w] == 1):
@@ -343,23 +347,23 @@ def process1(s, part2=False, visualize=False):  # Faster with numpy.
     video = [image1, image2]
     shrink = 2
     if shrink > 1:
-      shape = (grid.shape[0] // shrink, grid.shape[1] // shrink)
-      video = media.resize_video(video, shape)
+      shape = grid.shape[0] // shrink, grid.shape[1] // shrink
+      video = media.resize_video(video, shape)  # type: ignore
     media.show_video(video, codec='gif', fps=1)
 
   return claim
 
 
-check_eq(process1('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 4)
-puzzle.verify(1, process1)  # ~13 ms.
+check_eq(day3('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 4)
+puzzle.verify(1, day3)  # ~13 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
-puzzle.verify(2, process2)  # ~21 ms.
+day3_part2 = functools.partial(day3, part2=True)
+check_eq(day3_part2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
+puzzle.verify(2, day3_part2)  # ~21 ms.
 
 # %%
 media.set_max_output_height(3000)
-_ = process2(puzzle.input, visualize=True)
+_ = day3_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
 # <a name="day4"></a>
@@ -396,7 +400,7 @@ s1 = """
 
 
 # %%
-def process1(s, part2=False):
+def day4(s, part2=False):
   lines = s.strip('\n').split('\n')
   lines = sorted(lines)
   num_dates = sum('Guard' in line for line in lines)
@@ -420,7 +424,7 @@ def process1(s, part2=False):
 
   if not part2:
     total_sleep = {guard: asleep[date_guard == guard].sum() for guard in guards}
-    guard_most_sleep = max(total_sleep, key=total_sleep.get)
+    guard_most_sleep = max(total_sleep, key=lambda guard: total_sleep[guard])
     minute_sleep = asleep[date_guard == guard_most_sleep].sum(axis=0)
     minute_most_sleep = minute_sleep.argmax()
     return guard_most_sleep * minute_most_sleep
@@ -430,17 +434,17 @@ def process1(s, part2=False):
   guard_max_sleep_by_minute = {
       guard: array.max() for guard, array in guard_sleep_by_minute.items()
   }
-  guard = max(guard_max_sleep_by_minute, key=guard_max_sleep_by_minute.get)
+  guard = max(guard_max_sleep_by_minute, key=lambda guard: guard_max_sleep_by_minute[guard])
   minute = guard_sleep_by_minute[guard].argmax()
   return guard * minute
 
 
-check_eq(process1(s1), 10 * 24)
-puzzle.verify(1, process1)  # ~4 ms.
+check_eq(day4(s1), 10 * 24)
+puzzle.verify(1, day4)  # ~4 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s1), 99 * 45)
-puzzle.verify(2, process2)  # ~4 ms.
+day4_part2 = functools.partial(day4, part2=True)
+check_eq(day4_part2(s1), 99 * 45)
+puzzle.verify(2, day4_part2)  # ~4 ms.
 
 # %% [markdown]
 # <a name="day5"></a>
@@ -456,7 +460,7 @@ puzzle = advent.puzzle(day=5)
 
 
 # %%
-def process1(s, part2=False):  # Slow.
+def day5a(s, part2=False):  # Slow.
 
   def simplify_polymer(s):
     pairs = [chr(ord('a') + i) + chr(ord('A') + i) for i in range(26)]
@@ -478,19 +482,19 @@ def process1(s, part2=False):  # Slow.
   return min(len(simplify_polymer(remove_elem(s, i))) for i in range(26))
 
 
-check_eq(process1('dabAcCaCBAcCcaDA'), 10)
-# puzzle.verify(1, process1)  # ~3 s.
+check_eq(day5a('dabAcCaCBAcCcaDA'), 10)
+# puzzle.verify(1, day5a)  # ~3 s.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2('dabAcCaCBAcCcaDA'), 4)
-# puzzle.verify(2, process2)  # ~80 s.
+day5_part2a = functools.partial(day5a, part2=True)
+check_eq(day5_part2a('dabAcCaCBAcCcaDA'), 4)
+# puzzle.verify(2, day5_part2a)  # ~80 s.
 
 # %%
-def process1(s, part2=False):  # Faster, using stack and numba.
+def day5b(s, part2=False):  # Faster, using stack and numba.
 
   @numba_njit(cache=True)
   def simplify_polymer(s):
-    l = []
+    l: list[str] = []
     for ch in s:
       if l and abs(ord(ch) - ord(l[-1])) == 32:
         l.pop()
@@ -508,20 +512,20 @@ def process1(s, part2=False):  # Faster, using stack and numba.
   return min(len(simplify_polymer(remove_elem(s, i))) for i in range(26))
 
 
-check_eq(process1('dabAcCaCBAcCcaDA'), 10)  # ~700 ms for numba compilation.
-puzzle.verify(1, process1)  # ~ 20 ms.
+check_eq(day5b('dabAcCaCBAcCcaDA'), 10)  # ~700 ms for numba compilation.
+puzzle.verify(1, day5b)  # ~ 20 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2('dabAcCaCBAcCcaDA'), 4)
-puzzle.verify(2, process2)  # ~260 ms with numba (~440 ms without numba)
+day5_part2b = functools.partial(day5b, part2=True)
+check_eq(day5_part2b('dabAcCaCBAcCcaDA'), 4)
+puzzle.verify(2, day5_part2b)  # ~260 ms with numba (~440 ms without numba)
 
 
 # %%
-def process1(s, part2=False):  # Fastest; nested loops in numba.
+def day5(s, part2=False):  # Fastest; nested loops in numba.
 
   @numba_njit(cache=True)
   def length_of_simplified_polymer(codes):
-    l = []
+    l: list[int] = []
     for code in codes:
       if l and abs(code - l[-1]) == 32:
         l.pop()
@@ -533,7 +537,7 @@ def process1(s, part2=False):  # Fastest; nested loops in numba.
   def min_length_after_removing_any_one_letter_pair(codes):
     min_length = 10**8
     for omit in range(26):
-      l = []
+      l: list[int] = []
       for code in codes:
         if code not in (omit, omit + 32):
           if l and abs(code - l[-1]) == 32:
@@ -551,12 +555,12 @@ def process1(s, part2=False):  # Fastest; nested loops in numba.
   return min_length_after_removing_any_one_letter_pair(codes)
 
 
-check_eq(process1('dabAcCaCBAcCcaDA'), 10)
-puzzle.verify(1, process1)  # ~20 ms.
+check_eq(day5('dabAcCaCBAcCcaDA'), 10)
+puzzle.verify(1, day5)  # ~20 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2('dabAcCaCBAcCcaDA'), 4)
-puzzle.verify(2, process2)  # ~43 ms.
+day5_part2 = functools.partial(day5, part2=True)
+check_eq(day5_part2('dabAcCaCBAcCcaDA'), 4)
+puzzle.verify(2, day5_part2)  # ~43 ms.
 
 # %% [markdown]
 # <a name="day6"></a>
@@ -582,7 +586,7 @@ s1 = """
 
 
 # %%
-def process1(s, part2=False, max_sum=10_000, visualize=False):
+def day6(s, part2=False, max_sum=10_000, visualize=False):
   yxs = []
   for line in s.strip('\n').split('\n'):
     x, y = map(int, line.split(','))
@@ -607,8 +611,7 @@ def process1(s, part2=False, max_sum=10_000, visualize=False):
     count, i = max((c, i) for i, c in counts.items()
                    if i not in unbounded | {-1})
     if visualize:
-      cmap = np.uint8(np.random.default_rng(0).choice(
-          range(30, 150), (len(yxs) + 1, 3)))
+      cmap = np.random.default_rng(0).choice(range(30, 150), (len(yxs) + 1, 3)).astype(np.uint8)
       image = cmap[closest + 1]
       unb = (closest[..., None] == np.array(list(unbounded))).sum(axis=-1) > 0
       image[unb] += 105
@@ -623,15 +626,15 @@ def process1(s, part2=False, max_sum=10_000, visualize=False):
     media.show_image(sum_manhattans < max_sum)
   return np.count_nonzero(sum_manhattans < max_sum)
 
-check_eq(process1(s1), 17)
-puzzle.verify(1, process1)  # ~135 ms.
-_ = process1(puzzle.input, visualize=True)
+check_eq(day6(s1), 17)
+puzzle.verify(1, day6)  # ~135 ms.
+_ = day6(puzzle.input, visualize=True)
 
 # %%
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s1, max_sum=32), 16)
-puzzle.verify(2, process2)  # ~75 ms.
-_ = process2(puzzle.input, visualize=True)
+day6_part2 = functools.partial(day6, part2=True)
+check_eq(day6_part2(s1, max_sum=32), 16)
+puzzle.verify(2, day6_part2)  # ~75 ms.
+_ = day6_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
 # <a name="day7"></a>
@@ -658,7 +661,7 @@ Step F must be finished before step E can begin.
 
 
 # %%
-def process1(s, part2=False, num_workers=5, cost_base=60):
+def day7(s, part2=False, num_workers=5, cost_base=60):
   dependencies = collections.defaultdict(set)
   nodes = set()
   for line in s.strip('\n').split('\n'):
@@ -709,12 +712,12 @@ def process1(s, part2=False, num_workers=5, cost_base=60):
   return time
 
 
-check_eq(process1(s1), 'CABDFE')
-puzzle.verify(1, process1)  # ~0 ms.
+check_eq(day7(s1), 'CABDFE')
+puzzle.verify(1, day7)  # ~0 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s1, num_workers=2, cost_base=0), 15)
-puzzle.verify(2, process2)  # ~3 ms.
+day7_part2 = functools.partial(day7, part2=True)
+check_eq(day7_part2(s1, num_workers=2, cost_base=0), 15)
+puzzle.verify(2, day7_part2)  # ~3 ms.
 
 # %% [markdown]
 # <a name="day8"></a>
@@ -730,7 +733,7 @@ puzzle = advent.puzzle(day=8)
 
 
 # %%
-def process1(s, part2=False):
+def day8(s, part2=False):
 
   @dataclasses.dataclass
   class TreeNode:
@@ -768,12 +771,12 @@ def process1(s, part2=False):
   return node_value(tree)
 
 
-check_eq(process1('2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2'), 138)
-puzzle.verify(1, process1)  # ~10 ms.
+check_eq(day8('2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2'), 138)
+puzzle.verify(1, day8)  # ~10 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2('2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2'), 66)
-puzzle.verify(2, process2)  # ~10 ms.
+day8_part2 = functools.partial(day8, part2=True)
+check_eq(day8_part2('2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2'), 66)
+puzzle.verify(2, day8_part2)  # ~10 ms.
 
 # %% [markdown]
 # <a name="day9"></a>
@@ -789,7 +792,7 @@ puzzle = advent.puzzle(day=9)
 
 
 # %%
-def process1(s, part2=False):  # Compact.
+def day9a(s, part2=False):  # Compact.
   pattern = r'(\d+) players; last marble is worth (\d+) points'
   num_players, last_marble = map(int, re.fullmatch(pattern, s.strip()).groups())
   if part2:
@@ -807,18 +810,18 @@ def process1(s, part2=False):  # Compact.
   return max(scores)
 
 
-check_eq(process1('10 players; last marble is worth 1618 points'), 8317)
-check_eq(process1('13 players; last marble is worth 7999 points'), 146373)
-check_eq(process1('17 players; last marble is worth 1104 points'), 2764)
-check_eq(process1('21 players; last marble is worth 6111 points'), 54718)
-check_eq(process1('30 players; last marble is worth 5807 points'), 37305)
-puzzle.verify(1, process1)  # ~20 ms.
+check_eq(day9a('10 players; last marble is worth 1618 points'), 8317)
+check_eq(day9a('13 players; last marble is worth 7999 points'), 146373)
+check_eq(day9a('17 players; last marble is worth 1104 points'), 2764)
+check_eq(day9a('21 players; last marble is worth 6111 points'), 54718)
+check_eq(day9a('30 players; last marble is worth 5807 points'), 37305)
+puzzle.verify(1, day9a)  # ~20 ms.
 
-process2 = functools.partial(process1, part2=True)
-# puzzle.verify(2, process2)  # ~2000 ms.
+day9_part2a = functools.partial(day9a, part2=True)
+# puzzle.verify(2, day9_part2a)  # ~2000 ms.
 
 # %%
-def process1(s, part2=False):  # Slightly faster with quick inner loop.
+def day9b(s, part2=False):  # Slightly faster with quick inner loop.
   pattern = r'(\d+) players; last marble is worth (\d+) points'
   num_players, last_marble = map(int, re.fullmatch(pattern, s.strip()).groups())
   if part2:
@@ -850,18 +853,18 @@ def process1(s, part2=False):  # Slightly faster with quick inner loop.
   return max(scores)
 
 
-check_eq(process1('10 players; last marble is worth 1618 points'), 8317)
-check_eq(process1('13 players; last marble is worth 7999 points'), 146373)
-check_eq(process1('17 players; last marble is worth 1104 points'), 2764)
-check_eq(process1('21 players; last marble is worth 6111 points'), 54718)
-check_eq(process1('30 players; last marble is worth 5807 points'), 37305)
-puzzle.verify(1, process1)  # ~17 ms.
+check_eq(day9b('10 players; last marble is worth 1618 points'), 8317)
+check_eq(day9b('13 players; last marble is worth 7999 points'), 146373)
+check_eq(day9b('17 players; last marble is worth 1104 points'), 2764)
+check_eq(day9b('21 players; last marble is worth 6111 points'), 54718)
+check_eq(day9b('30 players; last marble is worth 5807 points'), 37305)
+puzzle.verify(1, day9b)  # ~17 ms.
 
-process2 = functools.partial(process1, part2=True)
-# puzzle.verify(2, process2)  # ~1800 ms.
+day9_part2b = functools.partial(day9b, part2=True)
+# puzzle.verify(2, day9_part2b)  # ~1800 ms.
 
 # %%
-def process1(s, part2=False):  # Fastest.  Singly-linked list is sufficient!
+def day9(s, part2=False):  # Fastest.  Singly-linked list is sufficient!
   pattern = r'(\d+) players; last marble is worth (\d+) points'
   num_players, last_marble = map(int, re.fullmatch(pattern, s.strip()).groups())
   if part2:
@@ -898,15 +901,15 @@ def process1(s, part2=False):  # Fastest.  Singly-linked list is sufficient!
   return func(num_players, last_marble)
 
 
-check_eq(process1('10 players; last marble is worth 1618 points'), 8317)
-check_eq(process1('13 players; last marble is worth 7999 points'), 146373)
-check_eq(process1('17 players; last marble is worth 1104 points'), 2764)
-check_eq(process1('21 players; last marble is worth 6111 points'), 54718)
-check_eq(process1('30 players; last marble is worth 5807 points'), 37305)
-puzzle.verify(1, process1)  # ~6 ms  (~50 ms without numba)
+check_eq(day9('10 players; last marble is worth 1618 points'), 8317)
+check_eq(day9('13 players; last marble is worth 7999 points'), 146373)
+check_eq(day9('17 players; last marble is worth 1104 points'), 2764)
+check_eq(day9('21 players; last marble is worth 6111 points'), 54718)
+check_eq(day9('30 players; last marble is worth 5807 points'), 37305)
+puzzle.verify(1, day9)  # ~6 ms  (~50 ms without numba)
 
-process2 = functools.partial(process1, part2=True)
-puzzle.verify(2, process2)  # ~38 ms (~5100 ms without numba)
+day9_part2 = functools.partial(day9, part2=True)
+puzzle.verify(2, day9_part2)  # ~38 ms (~5100 ms without numba)
 
 # %% [markdown]
 # <a name="day10"></a>
@@ -959,18 +962,18 @@ position=<-3,  6> velocity=< 2, -1>
 # "Support for 10-pixel-tall characters (2018 Day 10) is coming soon."
 if 0:  # https://pypi.org/project/advent-of-code-ocr/
   hh.run('!pip -q install advent-of-code-ocr')
-  import advent_of_code_ocr
+  import advent_of_code_ocr  # pylint: disable=unused-import # noqa
 
 
 # %%
-def process1(s, part2=False):  # Slow.
-  positions, velocities = [], []
+def day10a(s, part2=False):  # Slow.
+  positions0, velocities0 = [], []
   for line in s.strip('\n').split('\n'):
     pattern = r'position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>'
     x, y, dx, dy = map(int, re.fullmatch(pattern, line).groups())
-    positions.append([y, x])
-    velocities.append([dy, dx])
-  positions, velocities = np.array(positions), np.array(velocities)
+    positions0.append([y, x])
+    velocities0.append([dy, dx])
+  positions, velocities = np.array(positions0), np.array(velocities0)
 
   for index in itertools.count():
     shape = positions.ptp(axis=0) + 1
@@ -990,23 +993,23 @@ def process1(s, part2=False):  # Slow.
       '7a115ac723c75059c742c8bb21d5ee1c': 'ERCXLAJL',  # github.hhoppe.1452460
   }[hashed] if shape[1] > 30 else 'HI'
 
-check_eq(process1(s1), 'HI')
-puzzle.verify(1, process1)  # ~230 ms.
+check_eq(day10a(s1), 'HI')
+puzzle.verify(1, day10a)  # ~230 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s1), 3)
-puzzle.verify(2, process2)  # ~230 ms.
+day10_part2a = functools.partial(day10a, part2=True)
+check_eq(day10_part2a(s1), 3)
+puzzle.verify(2, day10_part2a)  # ~230 ms.
 
 
 # %%
-def process1(s, part2=False, visualize=False):  # Quick initial jump; visualize.
-  positions, velocities = [], []
+def day10(s, part2=False, visualize=False):  # Quick initial jump; visualize.
+  positions0, velocities0 = [], []
   for line in s.strip('\n').split('\n'):
     pattern = r'position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>'
     x, y, dx, dy = map(int, re.fullmatch(pattern, line).groups())
-    positions.append([y, x])
-    velocities.append([dy, dx])
-  positions, velocities = np.array(positions), np.array(velocities)
+    positions0.append([y, x])
+    velocities0.append([dy, dx])
+  positions, velocities = np.array(positions0), np.array(velocities0)
   all_positions = []
 
   leftmost, rightmost = positions[:, 1].argmin(), positions[:, 1].argmax()
@@ -1030,7 +1033,7 @@ def process1(s, part2=False, visualize=False):  # Quick initial jump; visualize.
   grid = hh.grid_from_indices(positions, dtype=np.uint8)
   if visualize:
     media.show_image(np.pad(grid, 1), height=50, border=True)
-    video = hh.grid_from_indices(all_positions, dtype=float)
+    video: Any = hh.grid_from_indices(all_positions, dtype=float)
     video = [video[0]] * 5 + list(video) + [video[-1]] * 10
     media.show_video(video, codec='gif', fps=5)
   import hashlib
@@ -1041,14 +1044,14 @@ def process1(s, part2=False, visualize=False):  # Quick initial jump; visualize.
       '7a115ac723c75059c742c8bb21d5ee1c': 'ERCXLAJL',  # github.hhoppe.1452460
   }[hashed] if shape[1] > 30 else 'HI'
 
-check_eq(process1(s1), 'HI')
-puzzle.verify(1, process1)  # ~3 ms.
+check_eq(day10(s1), 'HI')
+puzzle.verify(1, day10)  # ~3 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s1), 3)
-puzzle.verify(2, process2)  # ~3 ms.
+day10_part2 = functools.partial(day10, part2=True)
+check_eq(day10_part2(s1), 3)
+puzzle.verify(2, day10_part2)  # ~3 ms.
 
-_ = process1(puzzle.input, visualize=True)
+_ = day10(puzzle.input, visualize=True)
 
 # %% [markdown]
 # <a name="day11"></a>
@@ -1064,7 +1067,7 @@ puzzle = advent.puzzle(day=11)
 
 
 # %%
-def process1(s, part2=False, visualize=False):
+def day11(s, part2=False, visualize=False):
 
   def power_level(yx, serial_number):
     rack_id = yx[1] + 10
@@ -1086,8 +1089,8 @@ def process1(s, part2=False, visualize=False):
       box = np.full((size, size), 1, dtype=np.int32)
       result = scipy.signal.convolve2d(power, box, mode='valid')
     else:
-      result = (integral[size:, size:] - integral[size:, :-size]
-                - integral[:-size, size:] + integral[:-size, :-size])
+      result = (integral[size:, size:] - integral[size:, :-size] -
+                integral[:-size, size:] + integral[:-size, :-size])
     yx_largest = np.unravel_index(result.argmax(), result.shape)
     return yx_largest, result[yx_largest]
 
@@ -1111,15 +1114,15 @@ def process1(s, part2=False, visualize=False):
   return f'{yx_largest[1] + 1},{yx_largest[0] + 1},{best_size}'
 
 
-check_eq(process1('18'), '33,45')
-check_eq(process1('42'), '21,61')
-puzzle.verify(1, process1)  # ~3 ms.
+check_eq(day11('18'), '33,45')
+check_eq(day11('42'), '21,61')
+puzzle.verify(1, day11)  # ~3 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2('18'), '90,269,16')
-check_eq(process2('42'), '232,251,12')
-puzzle.verify(2, process2)  # ~70 ms.
-_ = process2(puzzle.input, visualize=True)
+day11_part2 = functools.partial(day11, part2=True)
+check_eq(day11_part2('18'), '90,269,16')
+check_eq(day11_part2('42'), '232,251,12')
+puzzle.verify(2, day11_part2)  # ~70 ms.
+_ = day11_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
 # The blinking (darkened) region at the lower-right indicates the square
@@ -1160,7 +1163,7 @@ initial state: #..#.#..##......###...###
 
 
 # %%
-def process1(s, part2=False, visualize=False):
+def day12(s, part2=False, visualize=False):
   lines = s.strip('\n').split('\n')
   assert lines[0].startswith('initial state: ') and not lines[1]
   state = lines[0][15:]
@@ -1204,12 +1207,12 @@ def process1(s, part2=False, visualize=False):
   return sum_pots2 + diff_sum_pots * remaining_generations
 
 
-check_eq(process1(s1), 325)
-puzzle.verify(1, process1)  # ~2 ms.
+check_eq(day12(s1), 325)
+puzzle.verify(1, day12)  # ~2 ms.
 
-process2 = functools.partial(process1, part2=True)
-puzzle.verify(2, process2)  # ~20 ms.
-_ = process2(puzzle.input, visualize=True)
+day12_part2 = functools.partial(day12, part2=True)
+puzzle.verify(2, day12_part2)  # ~20 ms.
+_ = day12_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
 # For my input, after 102 generations, the output has converged to a constant pattern that is translating rightward by 1 space every generation.
@@ -1249,7 +1252,7 @@ s2 = r"""
 
 
 # %%
-def process1(s, part2=False, verbose=False, visualize=False):
+def day13(s, part2=False, verbose=False, visualize=False):
 
   @dataclasses.dataclass
   class Cart:
@@ -1277,6 +1280,7 @@ def process1(s, part2=False, verbose=False, visualize=False):
             **{ch: (180,) * 3 for ch in r'|-\/'}}
     image0 = np.array(
       [cmap[e] for e in grid.flat], dtype=np.uint8).reshape(*grid.shape, 3)
+
   images = []
   for iteration in itertools.count():
     assert len(carts) >= 2
@@ -1304,7 +1308,7 @@ def process1(s, part2=False, verbose=False, visualize=False):
             images = [im.repeat(3, axis=0).repeat(3, axis=1) for im in images]
             images = [images[0]] * 20 + images + [images[-1]] * 40
             media.show_video(images, codec='gif', fps=20)
-            return
+            return None
           print(f'first collision at iteration={iteration}')
           return f'{new_yx[1]},{new_yx[0]}'
         for crashed_cart in [cart, cart2]:
@@ -1331,16 +1335,16 @@ def process1(s, part2=False, verbose=False, visualize=False):
       return f'{carts[0].yx[1]},{carts[0].yx[0]}'
 
 
-check_eq(process1(s1), '7,3')
-puzzle.verify(1, process1)  # ~19 ms.
+check_eq(day13(s1), '7,3')
+puzzle.verify(1, day13)  # ~19 ms.
 
 # %%
-_ = process1(puzzle.input, visualize=True)  # Slow; ~2.5 s.
+_ = day13(puzzle.input, visualize=True)  # Slow; ~2.5 s.
 
 # %%
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s2), '6,4')
-puzzle.verify(2, process2)  # ~280 ms.
+day13_part2 = functools.partial(day13, part2=True)
+check_eq(day13_part2(s2), '6,4')
+puzzle.verify(2, day13_part2)  # ~280 ms.
 
 # %% [markdown]
 # <a name="day14"></a>
@@ -1356,7 +1360,7 @@ puzzle = advent.puzzle(day=14)
 
 
 # %%
-def process1(s):  # Slow.
+def day14_part1a(s):  # Slow.
   num_recipes = int(s)
   recipes = [3, 7]
   indices = [0, 1]
@@ -1371,15 +1375,15 @@ def process1(s):  # Slow.
   return ''.join(map(str, recipes[num_recipes:num_recipes + 10]))
 
 
-check_eq(process1('9'), '5158916779')
-check_eq(process1('5'), '0124515891')
-check_eq(process1('18'), '9251071085')
-check_eq(process1('2018'), '5941429882')
-puzzle.verify(1, process1)  # ~820 ms.
+check_eq(day14_part1a('9'), '5158916779')
+check_eq(day14_part1a('5'), '0124515891')
+check_eq(day14_part1a('18'), '9251071085')
+check_eq(day14_part1a('2018'), '5941429882')
+puzzle.verify(1, day14_part1a)  # ~820 ms.
 
 
 # %%
-def process1(s):  # Fast using numba.
+def day14_part1(s):  # Fast using numba.
   num_recipes = int(s)
 
   @numba_njit(cache=True)
@@ -1409,15 +1413,15 @@ def process1(s):  # Fast using numba.
   return ''.join(map(str, func(num_recipes)))
 
 
-check_eq(process1('9'), '5158916779')
-check_eq(process1('5'), '0124515891')
-check_eq(process1('18'), '9251071085')
-check_eq(process1('2018'), '5941429882')
-puzzle.verify(1, process1)  # ~8 ms.
+check_eq(day14_part1('9'), '5158916779')
+check_eq(day14_part1('5'), '0124515891')
+check_eq(day14_part1('18'), '9251071085')
+check_eq(day14_part1('2018'), '5941429882')
+puzzle.verify(1, day14_part1)  # ~8 ms.
 
 
 # %%
-def process2(s):  # Slow.
+def day14_part2a(s):  # Slow.
   pattern = list(map(int, s.strip()))
   recipes = [3, 7]
   indices = [0, 1]
@@ -1432,12 +1436,12 @@ def process2(s):  # Slow.
         return len(recipes) - len(pattern)
     indices = [(index + 1 + recipes[index]) % len(recipes) for index in indices]
 
-check_eq(process2('92510'), 18)
-check_eq(process2('59414'), 2018)
-# puzzle.verify(2, process2)  # ~30 s.
+check_eq(day14_part2a('92510'), 18)
+check_eq(day14_part2a('59414'), 2018)
+# puzzle.verify(2, day14_part2a)  # ~30 s.
 
 # %%
-def process2(s):  # Fast using numba.
+def day14_part2b(s):  # Fast using numba.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
@@ -1483,15 +1487,15 @@ def process2(s):  # Fast using numba.
   return func(pattern)
 
 
-check_eq(process2('51589'), 9)
-check_eq(process2('01245'), 5)
-check_eq(process2('92510'), 18)
-check_eq(process2('59414'), 2018)
-puzzle.verify(2, process2)  # ~360 ms.
+check_eq(day14_part2b('51589'), 9)
+check_eq(day14_part2b('01245'), 5)
+check_eq(day14_part2b('92510'), 18)
+check_eq(day14_part2b('59414'), 2018)
+puzzle.verify(2, day14_part2b)  # ~360 ms.
 
 
 # %%
-def process2(s):  # Faster by generating batches.
+def day14_part2c(s):  # Faster by generating batches.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
@@ -1540,15 +1544,15 @@ def process2(s):  # Faster by generating batches.
   return func(pattern)
 
 
-check_eq(process2('51589'), 9)
-check_eq(process2('01245'), 5)
-check_eq(process2('92510'), 18)
-check_eq(process2('59414'), 2018)
-puzzle.verify(2, process2)  # ~190 ms.
+check_eq(day14_part2c('51589'), 9)
+check_eq(day14_part2c('01245'), 5)
+check_eq(day14_part2c('92510'), 18)
+check_eq(day14_part2c('59414'), 2018)
+puzzle.verify(2, day14_part2c)  # ~190 ms.
 
 
 # %%
-def process2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
+def day14_part2d(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
@@ -1626,15 +1630,15 @@ def process2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
   return func(pattern)
 
 
-check_eq(process2('51589'), 9)
-check_eq(process2('01245'), 5)
-check_eq(process2('92510'), 18)
-check_eq(process2('59414'), 2018)
-puzzle.verify(2, process2)  # ~250 ms is slower than naive algorithm.
+check_eq(day14_part2d('51589'), 9)
+check_eq(day14_part2d('01245'), 5)
+check_eq(day14_part2d('92510'), 18)
+check_eq(day14_part2d('59414'), 2018)
+puzzle.verify(2, day14_part2d)  # ~250 ms is slower than naive algorithm.
 
 
 # %%
-def process2(s):  # Fastest, using Boyer-Moore-Horspool subsequence search.
+def day14_part2(s):  # Fastest, using Boyer-Moore-Horspool subsequence search.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
@@ -1700,11 +1704,11 @@ def process2(s):  # Fastest, using Boyer-Moore-Horspool subsequence search.
   return func(pattern)
 
 
-check_eq(process2('51589'), 9)
-check_eq(process2('01245'), 5)
-check_eq(process2('92510'), 18)
-check_eq(process2('59414'), 2018)
-puzzle.verify(2, process2)  # ~170 ms.
+check_eq(day14_part2('51589'), 9)
+check_eq(day14_part2('01245'), 5)
+check_eq(day14_part2('92510'), 18)
+check_eq(day14_part2('59414'), 2018)
+puzzle.verify(2, day14_part2)  # ~170 ms.
 
 # %% [markdown]
 # <a name="day15"></a>
@@ -1783,8 +1787,8 @@ s14 = """
 
 
 # %%
-def simulate_combat(s, verbose=False,
-                    elf_attack_power=3, fail_if_elf_dies=False):
+def day15_part1a(s, verbose=False,
+                 elf_attack_power=3, fail_if_elf_dies=False):
 
   @dataclasses.dataclass
   class Unit:
@@ -1815,8 +1819,8 @@ def simulate_combat(s, verbose=False,
   def adjacent_towards_opponent(inrange):
     # BFS from unit until yx in inrange; record all others at same distance.
     next_queue = [unit.yx]
-    visited = set()
-    nearests = set()
+    visited: set[tuple[int, int]] = set()
+    nearests: set[tuple[int, int]] = set()
     for nearest_distance in itertools.count():
       if nearests or not next_queue:
         break
@@ -1897,21 +1901,19 @@ def simulate_combat(s, verbose=False,
   # show('' + hh.string_from_grid(grid))
   return num_rounds * sum_points
 
-process1 = simulate_combat
+check_eq(day15_part1a(s1), 27730)
+check_eq(day15_part1a(s10), 36334)
+check_eq(day15_part1a(s11), 39514)
+check_eq(day15_part1a(s12), 27755)
+check_eq(day15_part1a(s13), 28944)
+check_eq(day15_part1a(s14), 18740)
 
-check_eq(process1(s1), 27730)
-check_eq(process1(s10), 36334)
-check_eq(process1(s11), 39514)
-check_eq(process1(s12), 27755)
-check_eq(process1(s13), 28944)
-check_eq(process1(s14), 18740)
-
-puzzle.verify(1, process1)  # ~800 ms.
+puzzle.verify(1, day15_part1a)  # ~800 ms.
 
 
 # %%
-def simulate_combat(s, visualize=False, elf_attack_power=3,
-                    fail_if_elf_dies=False):  # Using numba; optimized.
+def day15_part1(s, visualize=False, elf_attack_power=3,
+                fail_if_elf_dies=False):  # Using numba; optimized.
 
   @dataclasses.dataclass
   class Unit:
@@ -1941,7 +1943,7 @@ def simulate_combat(s, visualize=False, elf_attack_power=3,
   # Passing a `set` into numba is ok but deprecated; frozenset is not supported.
   import warnings
   warnings_context = warnings.catch_warnings()
-  warnings_context.__enter__()
+  warnings_context.__enter__()  # pylint: disable=unnecessary-dunder-call
   warnings.simplefilter(
       'ignore', category=numba.core.errors.NumbaPendingDeprecationWarning)
 
@@ -1949,8 +1951,8 @@ def simulate_combat(s, visualize=False, elf_attack_power=3,
   def adjacent_towards_opponent(grid, unit_yx, inrange):
     # BFS from unit until yx in inrange; record all others at same distance.
     next_queue = [unit_yx]
-    visited = set()
-    nearests = set()
+    visited: set[tuple[int, int]] = set()
+    nearests: set[tuple[int, int]] = set()
     for nearest_distance in range(10**8):
       if nearests or not next_queue:
         break
@@ -2039,7 +2041,7 @@ def simulate_combat(s, visualize=False, elf_attack_power=3,
           if fail_if_elf_dies and opponent.ch == 'E':
             return None
 
-  warnings_context.__exit__()
+  warnings_context.__exit__(None, None, None)
   if visualize:
     images = [images[0]] * 20 + images + [images[-1]] * 30
     media.show_video(images, codec='gif', fps=10)
@@ -2049,44 +2051,43 @@ def simulate_combat(s, visualize=False, elf_attack_power=3,
   sum_points = sum(hit_points)
   return num_rounds * sum_points
 
-process1 = simulate_combat
 
-check_eq(process1(s1), 27730)  # ~1800 ms for numba jit compilation!
-check_eq(process1(s10), 36334)  # ~29 ms.
-check_eq(process1(s11), 39514)
-check_eq(process1(s12), 27755)
-check_eq(process1(s13), 28944)
-check_eq(process1(s14), 18740)
-puzzle.verify(1, process1)  # ~210 ms.
-
-# %%
-process1(puzzle.input, visualize=True)  # ~600 ms.
-
+check_eq(day15_part1(s1), 27730)  # ~1800 ms for numba jit compilation!
+check_eq(day15_part1(s10), 36334)  # ~29 ms.
+check_eq(day15_part1(s11), 39514)
+check_eq(day15_part1(s12), 27755)
+check_eq(day15_part1(s13), 28944)
+check_eq(day15_part1(s14), 18740)
+puzzle.verify(1, day15_part1)  # ~210 ms.
 
 # %%
-def process2(s):  # Brute-force search of increasing attack power.
+day15_part1(puzzle.input, visualize=True)  # ~600 ms.
+
+
+# %%
+def day15_part2a(s):  # Brute-force search of increasing attack power.
   for elf_attack_power in itertools.count(3):
-    result = simulate_combat(
+    result = day15_part1(
         s, elf_attack_power=elf_attack_power, fail_if_elf_dies=True)
     if result:
       print(f'Found solution at elf_attack_power={elf_attack_power}')
       return result
 
-check_eq(process2(s1), 4988)
-check_eq(process2(s11), 31284)
-check_eq(process2(s12), 3478)
-check_eq(process2(s13), 6474)
-check_eq(process2(s14), 1140)
+check_eq(day15_part2a(s1), 4988)
+check_eq(day15_part2a(s11), 31284)
+check_eq(day15_part2a(s12), 3478)
+check_eq(day15_part2a(s13), 6474)
+check_eq(day15_part2a(s14), 1140)
 
-# puzzle.verify(2, process2)  # ~1600 ms.
+# puzzle.verify(2, day15_part2a)  # ~1600 ms.
 
 # %%
-def process2(s, visualize=False):  # Faster bisection search.
+def day15_part2(s, visualize=False):  # Faster bisection search.
   current = 10
   low = high = None
   results = {}
   while True:
-    results[current] = result = simulate_combat(
+    results[current] = result = day15_part1(
         s, elf_attack_power=current, fail_if_elf_dies=True)
     if result:  # We should try to decrease current.
       high = current
@@ -2107,20 +2108,20 @@ def process2(s, visualize=False):  # Faster bisection search.
         break
   print(f'Found solution at elf_attack_power={current}')
   if visualize:
-    simulate_combat(
+    day15_part1(
         s, elf_attack_power=current, fail_if_elf_dies=True, visualize=True)
   return results[current]
 
-check_eq(process2(s1), 4988)
-check_eq(process2(s11), 31284)
-check_eq(process2(s12), 3478)
-check_eq(process2(s13), 6474)
-check_eq(process2(s14), 1140)
+check_eq(day15_part2(s1), 4988)
+check_eq(day15_part2(s11), 31284)
+check_eq(day15_part2(s12), 3478)
+check_eq(day15_part2(s13), 6474)
+check_eq(day15_part2(s14), 1140)
 
-puzzle.verify(2, process2)  # ~650 ms. (elf_attack_power = 19; num_rounds = 40)
+puzzle.verify(2, day15_part2)  # ~650 ms. (elf_attack_power = 19; num_rounds = 40)
 
 # %%
-_ = process2(puzzle.input, visualize=True)  # ~1300 ms.
+_ = day15_part2(puzzle.input, visualize=True)  # ~1300 ms.
 
 # %% [markdown]
 # <a name="day16"></a>
@@ -2143,7 +2144,7 @@ After:  [3, 2, 2, 1]
 
 
 # %%
-def process1(s, part2=False):
+def day16(s, part2=False):
   s1, s2 = s.split('\n\n\n')
   machine = Machine(num_registers=4)
   num_operations = len(machine.operations)
@@ -2192,11 +2193,11 @@ def process1(s, part2=False):
   return machine.registers[0]
 
 
-check_eq(process1(s1 + '\n\n\n'), 1)
-puzzle.verify(1, process1)  # ~20 ms.
+check_eq(day16(s1 + '\n\n\n'), 1)
+puzzle.verify(1, day16)  # ~20 ms.
 
-process2 = functools.partial(process1, part2=True)
-puzzle.verify(2, process2)  # ~22 ms.
+day16_part2 = functools.partial(day16, part2=True)
+puzzle.verify(2, day16_part2)  # ~22 ms.
 
 # %% [markdown]
 # <a name="day17"></a>
@@ -2224,7 +2225,7 @@ y=13, x=498..504
 
 
 # %%
-def process1(s, part2=False, visualize=False):
+def day17(s, part2=False, visualize=False):
   grid = {}
 
   for line in s.strip('\n').split('\n'):
@@ -2235,8 +2236,12 @@ def process1(s, part2=False, visualize=False):
       grid[yx[0], yx[1]] = '#'
   ymin, ymax = min(y for y, x in grid), max(y for y, x in grid)
 
-  def encode(yx): return -yx[0], yx[1]
-  def decode(yx): return -yx[0], yx[1]
+  def encode(yx):
+    return -yx[0], yx[1]
+
+  def decode(yx):
+    return -yx[0], yx[1]
+
   yx = 0, 500
   sources = [encode(yx)]  # heap
   grid[yx] = '|'
@@ -2290,13 +2295,13 @@ def process1(s, part2=False, visualize=False):
              if ymin <= yx[0] <= ymax and ch in desired)
 
 
-check_eq(process1(s1), 57)
-puzzle.verify(1, process1)  # ~110 ms.
-process1(puzzle.input, visualize=True)
+check_eq(day17(s1), 57)
+puzzle.verify(1, day17)  # ~110 ms.
+day17(puzzle.input, visualize=True)
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s1), 29)
-puzzle.verify(2, process2)  # ~110 ms.
+day17_part2 = functools.partial(day17, part2=True)
+check_eq(day17_part2(s1), 29)
+puzzle.verify(2, day17_part2)  # ~110 ms.
 
 # %% [markdown]
 # <a name="day18"></a>
@@ -2326,7 +2331,7 @@ s1 = """
 
 
 # %%
-def process1(s, num_minutes=10, part2=False, visualize=False):
+def day18(s, num_minutes=10, part2=False, visualize=False):
   grid = hh.grid_from_string(s)
 
   def evolve_grid():
@@ -2353,9 +2358,9 @@ def process1(s, num_minutes=10, part2=False, visualize=False):
 
   # Detect a repeating cycle to speed up the evolution.
   images = []
-  configs = {}  # hashed_grid -> remaining minute it first appeared.
+  configs: dict[Any, int] = {}  # hashed_grid -> remaining minute it first appeared.
   remaining_minutes = 1_000_000_000
-  period = None
+  period = -1
   for minute in itertools.count():
     if visualize:
       cmap = {'.': (200, 0, 0), '|': (0, 200, 0), '#': (0, 0, 200)}
@@ -2363,7 +2368,7 @@ def process1(s, num_minutes=10, part2=False, visualize=False):
       image = image.reshape(*grid.shape, 3).repeat(3, axis=0).repeat(3, axis=1)
       images.append(image)
     config = grid.tobytes()  # Hashable; ''.join(grid.flat) is slower.
-    if config in configs and not period:
+    if config in configs and period < 0:
       period = configs[config] - remaining_minutes
       remaining_minutes = remaining_minutes % period
       if 0:
@@ -2375,6 +2380,7 @@ def process1(s, num_minutes=10, part2=False, visualize=False):
     remaining_minutes -= 1
 
   if visualize:
+    assert period > 0
     videos = {
         'Start': [images[0]] * 20 + images[:50] + [images[49]] * 10,
         f'Cycling period={period}': images[-period:],
@@ -2384,15 +2390,15 @@ def process1(s, num_minutes=10, part2=False, visualize=False):
   return resource_value()
 
 
-check_eq(process1(s1), 1147)
-# process1(puzzle.input, num_minutes=400)
-puzzle.verify(1, process1)  # ~10 ms.
+check_eq(day18(s1), 1147)
+# day18(puzzle.input, num_minutes=400)
+puzzle.verify(1, day18)  # ~10 ms.
 
-process2 = functools.partial(process1, part2=True)
-puzzle.verify(2, process2)  # ~440 ms.
+day18_part2 = functools.partial(day18, part2=True)
+puzzle.verify(2, day18_part2)  # ~440 ms.
 
 # %%
-_ = process2(puzzle.input, visualize=True)
+_ = day18_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
 # <a name="day19"></a>
@@ -2478,7 +2484,7 @@ seti 9 0 5
 #   a += sum(factors(f))
 
 # %%
-def process1(s, part2=False, verbose=False):
+def day19(s, part2=False, verbose=False):
 
   def factors(n):
     result = set()
@@ -2523,11 +2529,11 @@ def process1(s, part2=False, verbose=False):
   return machine.registers[0]
 
 
-check_eq(process1(s1), 6)
-puzzle.verify(1, process1)  # ~0 ms.
+check_eq(day19(s1), 6)
+puzzle.verify(1, day19)  # ~0 ms.
 
-process2 = functools.partial(process1, part2=True)
-puzzle.verify(2, process2)  # ~1 ms.
+day19_part2 = functools.partial(day19, part2=True)
+puzzle.verify(2, day19_part2)  # ~1 ms.
 
 # %% [markdown]
 # <a name="day20"></a>
@@ -2551,7 +2557,7 @@ puzzle = advent.puzzle(day=20)
 # backtracking along edges of the tree.  My solution is likely overkill for
 # this simpler case.
 
-def process1(s, part2=False, visualize=False):
+def day20(s, part2=False, visualize=False):
   s, = re.fullmatch(r'\^([SNEW(|)]+)\$', s.strip()).groups()
 
   def parse(s):
@@ -2653,21 +2659,21 @@ def process1(s, part2=False, visualize=False):
   return sum(1 for distance in distances.values() if distance >= 1000)
 
 
-check_eq(process1('^WNE$'), 3)
-check_eq(process1('^ENWWW(NEEE|SSE(EE|N))$'), 10)
-check_eq(process1('^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$'), 18)
-check_eq(process1('^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$'), 23)
-check_eq(process1('^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$'), 31)
-puzzle.verify(1, process1)  # ~840 ms.
+check_eq(day20('^WNE$'), 3)
+check_eq(day20('^ENWWW(NEEE|SSE(EE|N))$'), 10)
+check_eq(day20('^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$'), 18)
+check_eq(day20('^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$'), 23)
+check_eq(day20('^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$'), 31)
+puzzle.verify(1, day20)  # ~840 ms.
 
 # %%
-process2 = functools.partial(process1, part2=True, visualize=False)
-puzzle.verify(2, process2)  # ~840 ms.
-_ = process2(puzzle.input, visualize=True)
+day20_part2 = functools.partial(day20, part2=True, visualize=False)
+puzzle.verify(2, day20_part2)  # ~840 ms.
+_ = day20_part2(puzzle.input, visualize=True)
 
 # %%
 if 0:  # Due to backtracking, one cannot simply look for longest expansion.
-  def process1(s, part2=False, visualize=True):
+  def day20a(s):
     s, = re.fullmatch(r'\^([SNEW(|)]+)\$', s.strip()).groups()
 
     def max_regex_length(s):
@@ -2691,9 +2697,9 @@ if 0:  # Due to backtracking, one cannot simply look for longest expansion.
     max_len, _ = max_regex_length(s)
     return max_len
 
-  check_eq(process1('^WNE$'), 3)
-  check_eq(process1('^ENWWW(NEEE|SSE(EE|N))$'), 10)
-  check_eq(process1('^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$'), 18)
+  check_eq(day20a('^WNE$'), 3)
+  check_eq(day20a('^ENWWW(NEEE|SSE(EE|N))$'), 10)
+  check_eq(day20a('^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$'), 18)
 
 # %% [markdown]
 # <a name="day21"></a>
@@ -2708,12 +2714,9 @@ if 0:  # Due to backtracking, one cannot simply look for longest expansion.
 puzzle = advent.puzzle(day=21)
 
 # %%
-def test():
-  for i, line in enumerate(puzzle.input.splitlines()[1:]):
-    print(f'{i:2} {line}')
 
 if 0:
-  test()
+  print('\n'.join(f'# {i:2} {line:18} # ' for i, line in enumerate(puzzle.input.splitlines()[1:])))
 
 #  0 seti 123 0 4       # e = 123
 #  1 bani 4 456 4       # e &= 456
@@ -2790,7 +2793,7 @@ if 0:
 #     d //= 256
 
 # %%
-def test():
+def day21_test():
 
   def simulate(max_count=10_000_000, verbose=False):
     d = 65536
@@ -2850,10 +2853,10 @@ def test():
   # 11457 [9486379, 5590365, 182116, 12821901, 10199686]
 
 
-# test()
+# day21_test()
 
 # %%
-def process1(s, part2=False):
+def day21(s, part2=False):
   machine = Machine()
   machine.read_instructions(s)
 
@@ -2885,7 +2888,7 @@ def process1(s, part2=False):
   if not part2:
     return next(gen_sequence())
 
-  results = {}
+  results: dict[int, int] = {}
   for a in gen_sequence():
     if a in results:
       print(f'Found {len(results)} numbers before first repetition.')
@@ -2893,10 +2896,10 @@ def process1(s, part2=False):
     results[a] = 1
 
 
-puzzle.verify(1, process1)  # ~0 ms.
+puzzle.verify(1, day21)  # ~0 ms.
 
-process2 = functools.partial(process1, part2=True)
-puzzle.verify(2, process2)  # ~630 ms.
+day21_part2 = functools.partial(day21, part2=True)
+puzzle.verify(2, day21_part2)  # ~630 ms.
 
 # %% [markdown]
 # <a name="day22"></a>
@@ -2926,7 +2929,7 @@ target: 10,10
 
 # %%
 # https://www.reddit.com/r/adventofcode/comments/a8i1cy/comment/ecazvbe
-def process1(s, part2=False, pad=60):  # Using networkx; slower.
+def day22a(s, part2=False, pad=60):  # Using networkx; slower.
   rocky, wet, narrow = 0, 1, 2
   del narrow  # unused
   torch, gear, neither = 0, 1, 2
@@ -2941,7 +2944,7 @@ def process1(s, part2=False, pad=60):  # Using networkx; slower.
 
   def generate_grid(depth, shape):
     # (x, y) -> geologic index, erosion level, risk
-    grid = {}
+    grid: dict[tuple[int, int], tuple[int, int, int]] = {}
     for y, x in np.ndindex((shape[1], shape[0])):
       if (x, y) in [(0, 0), target]:
         geo = 0
@@ -2953,7 +2956,7 @@ def process1(s, part2=False, pad=60):  # Using networkx; slower.
         geo = grid[x-1, y][1] * grid[x, y-1][1]
       ero = (geo + depth) % 20183
       risk = ero % 3
-      grid[x, y] = (geo, ero, risk)
+      grid[x, y] = geo, ero, risk
     return grid
 
   def generate_graph(grid, shape):
@@ -2961,8 +2964,8 @@ def process1(s, part2=False, pad=60):  # Using networkx; slower.
     # Note: Using np.array for grid is actually slower.
     graph = nx.Graph()
     for y, x in np.ndindex((shape[1], shape[0])):
-      items = valid_items[grid[x, y]]
-      graph.add_edge((x, y, items[0]), (x, y, items[1]), weight=7)
+      item0, item1 = valid_items[grid[x, y]]
+      graph.add_edge((x, y, item0), (x, y, item1), weight=7)
     for y, x in np.ndindex((shape[1] - 1, shape[0] - 1)):
       items = set(valid_items[grid[x, y]])
       for dx, dy in ((0, 1), (1, 0)):
@@ -2993,19 +2996,19 @@ def process1(s, part2=False, pad=60):  # Using networkx; slower.
   return nx.dijkstra_path_length(graph, (0, 0, torch), (*target, torch))
 
 
-check_eq(process1(s1), 114)
-puzzle.verify(1, process1)  # ~15 ms.
+check_eq(day22a(s1), 114)
+puzzle.verify(1, day22a)  # ~15 ms.
 
 if not importlib.util.find_spec('networkx'):
   print('Module networkx is unavailable.')
 else:
-  process2 = functools.partial(process1, part2=True)
-  check_eq(process2(s1), 45)
-  # puzzle.verify(2, process2)  # ~2000 ms using Dijkstra (~2.7 s using A*).
+  day22_part2a = functools.partial(day22a, part2=True)
+  check_eq(day22_part2a(s1), 45)
+  # puzzle.verify(2, day22_part2a)  # ~2000 ms using Dijkstra (~2.7 s using A*).
 
 
 # %%
-def process1(s, part2=False, pad=60, visualize=False):  # With numba.
+def day22(s, part2=False, pad=60, visualize=False):  # With numba.
   lines = s.strip('\n').split('\n')
   depth = int(re.fullmatch(r'depth: (\d+)', lines[0]).group(1))
   pattern = r'target: (\d+),(\d+)'
@@ -3034,6 +3037,7 @@ def process1(s, part2=False, pad=60, visualize=False):  # With numba.
     # https://levelup.gitconnected.com/dijkstra-algorithm-in-python-8f0e75e3f16e
     TORCH = 1
     distances = {}
+    # pylint: disable-next=consider-using-set-comprehension
     visited = set([(0, 0, 0) for _ in range(0)])  # Typed empty set.
     parents = {(0, 0, 0): (0, 0, 0)}  # Dummy entry for numba typing.
     source_tyx = TORCH, 0, 0
@@ -3095,13 +3099,13 @@ def process1(s, part2=False, pad=60, visualize=False):  # With numba.
   return distance
 
 
-check_eq(process1(s1), 114)
-puzzle.verify(1, process1)  # ~14 ms.
+check_eq(day22(s1), 114)
+puzzle.verify(1, day22)  # ~14 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s1), 45)  # 2.4 s for numba jit compilation!
-puzzle.verify(2, process2)  # ~240 ms (~1050 ms without numba)
-_ = process2(puzzle.input, visualize=True)  # ~1 s.
+day22_part2 = functools.partial(day22, part2=True)
+check_eq(day22_part2(s1), 45)  # 2.4 s for numba jit compilation!
+puzzle.verify(2, day22_part2)  # ~240 ms (~1050 ms without numba)
+_ = day22_part2(puzzle.input, visualize=True)  # ~1 s.
 
 # %% [markdown]
 # <a name="day23"></a>
@@ -3140,14 +3144,14 @@ pos=<10,10,10>, r=5
 
 
 # %%
-def process1(s, part2=False):
-  positions, radii = [], []
+def day23a(s, part2=False):
+  positions0, radii0 = [], []
   for line in s.strip('\n').split('\n'):
     pattern = r'pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)'
     x, y, z, r = map(int, re.fullmatch(pattern, line).groups())
-    positions.append((x, y, z))
-    radii.append(r)
-  positions, radii = np.array(positions), np.array(radii)
+    positions0.append((x, y, z))
+    radii0.append(r)
+  positions, radii = np.array(positions0), np.array(radii0)
 
   # With Manhattan distance, the in-range region in dimension D is a cocube
   # (e.g., an octahedron for D=3).  To efficiently represent intersections of
@@ -3182,9 +3186,9 @@ def process1(s, part2=False):
 
   if not part2:
     if 1:  # Faster.
-      i = radii.argmax()
+      i0 = radii.argmax()
       return np.count_nonzero(
-          abs(positions - positions[i]).sum(axis=1) <= radii[i])
+          abs(positions - positions[i0]).sum(axis=1) <= radii[i0])
     # Sanity check on polytopes.
     polytope = polytopes[radii.argmax()]
     return sum(1 for p in positions if point_in_polytope(p, polytope))
@@ -3212,9 +3216,9 @@ def process1(s, part2=False):
     polytopes2 = sorted(polytopes2, key=lambda p: np.abs(p).min())
     polytopes2 = list(reversed(polytopes2))
 
-    pieces = {}  # polytope -> count_of_original_octahedra
+    pieces: dict[tuple[int, ...], int] = {}  # polytope -> count_of_original_octahedra
     for i, polytope in enumerate(polytopes2):
-      new_pieces = {}
+      new_pieces: dict[tuple[int, ...], int] = {}
       for piece, count in pieces.items():
         piece2 = intersect(polytope, piece)
         if is_empty(piece2):
@@ -3239,9 +3243,9 @@ def process1(s, part2=False):
     # for c in hvalues:
     for c in [-np.sign(good_position)]:
       c = np.array(c, dtype=np.float64)
-      A_ub = np.array(hvalues)
+      matrix_ub = np.array(hvalues)
       b_ub = np.nan_to_num(best_polytope, posinf=10**10)
-      res = scipy.optimize.linprog(c, A_ub, b_ub, method='simplex')
+      res = scipy.optimize.linprog(c, matrix_ub, b_ub, method='simplex')
       check_eq(res.success, True)
       # Handle the case of results with half-integer coordinates.
       upper = tuple(np.floor(np.mod(res.x, 1.0) + 1.499).astype(int))
@@ -3263,20 +3267,20 @@ def process1(s, part2=False):
   return min_distance
 
 
-check_eq(process1(s1), 7)
-puzzle.verify(1, process1)  # ~30 ms.
+check_eq(day23a(s1), 7)
+puzzle.verify(1, day23a)  # ~30 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s2), 36)
-# puzzle.verify(2, process2)  # ~2000 ms.
+day23_part2a = functools.partial(day23a, part2=True)
+check_eq(day23_part2a(s2), 36)
+# puzzle.verify(2, day23_part2a)  # ~2000 ms.
 
 # %%
-def process1(s, part2=False):
+def day23b(s, part2=False):
   # Divide-and-conquer using octree decomposition, inspired by
   # https://github.com/wimglenn/advent-of-code-wim/blob/master/aoc_wim/aoc2018/q23.py.
   pattern = r'pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)'
-  data = np.array([list(map(int, re.fullmatch(pattern, line).groups()))
-                   for line in s.strip('\n').split('\n')])
+  data: Any = np.array([list(map(int, re.fullmatch(pattern, line).groups()))
+                        for line in s.strip('\n').split('\n')])
   xs, rs = data[:, :3], data[:, 3]
   i = rs.argmax()
   if not part2:
@@ -3285,8 +3289,8 @@ def process1(s, part2=False):
   x0 = xs.min(axis=0)
   priority_queue = [(0, xs.ptp(axis=0).max(), abs(x0).sum(), *x0)]
   while priority_queue:
-    n_out_of_range, s, d, *x = heapq.heappop(priority_queue)
-    x = np.array(x)
+    n_out_of_range, s, d, *x0 = heapq.heappop(priority_queue)
+    x = np.array(x0)
     s //= 2
     if not s:
       # return d
@@ -3312,22 +3316,22 @@ def process1(s, part2=False):
 
   return d
 
-check_eq(process1(s1), 7)
-puzzle.verify(1, process1)  # ~4 ms.
+check_eq(day23b(s1), 7)
+puzzle.verify(1, day23b)  # ~4 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s2), 36)
-puzzle.verify(2, process2)  # ~285 ms.
+day23_part2b = functools.partial(day23b, part2=True)
+check_eq(day23_part2b(s2), 36)
+puzzle.verify(2, day23_part2b)  # ~285 ms.
 
 
 # %%
-def process1(s, part2=False):
+def day23(s, part2=False):
   # Divide-and-conquer using octree decomposition, adapted from
   # https://github.com/wimglenn/advent-of-code-wim/blob/master/aoc_wim/aoc2018/q23.py.
   # Improved to be robust (not assuming cubes with power-of-two dimensions).
   pattern = r'pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)'
-  data = np.array([list(map(int, re.fullmatch(pattern, line).groups()))
-                   for line in s.strip('\n').split('\n')])
+  data: Any = np.array([list(map(int, re.fullmatch(pattern, line).groups()))
+                       for line in s.strip('\n').split('\n')])
   xs, rs = data[:, :-1], data[:, -1]
   if not part2:
     i = rs.argmax()
@@ -3344,18 +3348,18 @@ def process1(s, part2=False):
         *(((l, m), (m + 1, h)) if m < h else ((l, h),)
           for l, m, h in zip(xl, xm, xh))):
       xl, xh = np.array(child_min_max).T
-      n_out = ((np.maximum(xl - xs, 0) + np.maximum(xs - xh, 0)).sum(axis=1)
-               > rs).sum()  # Maximize num in-range = minimize num out-of-range.
+      n_out = ((np.maximum(xl - xs, 0) + np.maximum(xs - xh, 0)).sum(axis=1) >
+               rs).sum()  # Maximize num in-range = minimize num out-of-range.
       heapq.heappush(
           pq, (n_out, (xh - xl).max(), abs(xl).sum(), tuple(xl), tuple(xh)))
 
 
-check_eq(process1(s1), 7)
-puzzle.verify(1, process1)  # ~4 ms.
+check_eq(day23(s1), 7)
+puzzle.verify(1, day23)  # ~4 ms.
 
-process2 = functools.partial(process1, part2=True)
-check_eq(process2(s2), 36)
-puzzle.verify(2, process2)  # ~60 ms.
+day23_part2 = functools.partial(day23, part2=True)
+check_eq(day23_part2(s2), 36)
+puzzle.verify(2, day23_part2)  # ~60 ms.
 
 # %% [markdown]
 # <a name="day24"></a>
@@ -3382,7 +3386,7 @@ Infection:
 
 
 # %%
-def simulate_immune_fight(s, verbose=False, boost=0, immune_must_win=False):
+def day24(s, verbose=False, boost=0, immune_must_win=False):
 
   @dataclasses.dataclass
   class Group:
@@ -3394,7 +3398,7 @@ def simulate_immune_fight(s, verbose=False, boost=0, immune_must_win=False):
     attack_type: str
     initiative: int  # Higher initiative attacks first and wins ties.
     attributes: dict[str, set[str]]  # ['immune'] and ['weak']
-    target: Group
+    target: Group | None
     targeted: bool
 
     def __init__(self, army, id, line):
@@ -3509,17 +3513,15 @@ def simulate_immune_fight(s, verbose=False, boost=0, immune_must_win=False):
   return sum(group.units for group in army.groups)
 
 
-process1 = simulate_immune_fight
-
-check_eq(process1(s1), 5216)
-puzzle.verify(1, process1)  # ~100 ms.
+check_eq(day24(s1), 5216)
+puzzle.verify(1, day24)  # ~100 ms.
 
 
 # %%
-def process2(s):
+def day24_part2(s):
 
   def boost_result(boost):
-    return simulate_immune_fight(s, boost=boost, immune_must_win=True)
+    return day24(s, boost=boost, immune_must_win=True)
 
   def binary_search(func, lower, upper):
     """Returns lowest x for which bool(func(x)) is True."""
@@ -3540,10 +3542,10 @@ def process2(s):
   return boost_result(boost)
 
 
-check_eq(simulate_immune_fight(s1, boost=1570), 51)
-check_eq(process2(s1), 51)
+check_eq(day24(s1, boost=1570), 51)
+check_eq(day24_part2(s1), 51)
 
-puzzle.verify(2, process2)  # ~1300 ms.
+puzzle.verify(2, day24_part2)  # ~1300 ms.
 
 # %% [markdown]
 # <a name="day25"></a>
@@ -3610,14 +3612,13 @@ s4 = """
 
 
 # %%
-def process1(s):  # Slower version.
+def day25a(s):  # Slower version.
   points = [tuple(map(int, l.split(','))) for l in s.strip('\n').split('\n')]
 
   union_find = hh.UnionFind[int]()
   num_edges = 0
-  for i in range(len(points)):
-    for j in range(i + 1, len(points)):
-      p, q = points[i], points[j]
+  for i, p in enumerate(points):
+    for j, q in enumerate(points[i + 1:], i + 1):
       if (abs(p[0] - q[0]) + abs(p[1] - q[1]) +
           abs(p[2] - q[2]) + abs(p[3] - q[3])) <= 3:
         num_edges += 1
@@ -3627,28 +3628,27 @@ def process1(s):  # Slower version.
   cluster_reps = {union_find.find(i) for i in range(len(points))}
   return len(cluster_reps)
 
-check_eq(process1(s1), 2)
-check_eq(process1(s2), 4)
-check_eq(process1(s3), 3)
-check_eq(process1(s4), 8)
-puzzle.verify(1, process1)  # ~740 ms.
+check_eq(day25a(s1), 2)
+check_eq(day25a(s2), 4)
+check_eq(day25a(s3), 3)
+check_eq(day25a(s4), 8)
+puzzle.verify(1, day25a)  # ~740 ms.
 
 
 # %%
-def process1(s):  # Faster version, using numpy to identify the graph edges.
-  points = [[int(t) for t in l.split(',')] for l in s.strip('\n').split('\n')]
-  points = np.array(points)
+def day25(s):  # Faster version, using numpy to identify the graph edges.
+  points = np.array([[int(t) for t in l.split(',')] for l in s.strip('\n').split('\n')])
   union_find = hh.UnionFind[int]()
-  edges = abs(points[None] - points.reshape(-1, 1, 4)).sum(axis=-1) <= 3
+  edges = abs(points[None] - points.reshape((-1, 1, 4))).sum(axis=-1) <= 3
   for i, j in np.argwhere(edges):
     union_find.union(i, j)
   return len({union_find.find(i) for i in range(len(points))})
 
-check_eq(process1(s1), 2)
-check_eq(process1(s2), 4)
-check_eq(process1(s3), 3)
-check_eq(process1(s4), 8)
-puzzle.verify(1, process1)  # ~93 ms.
+check_eq(day25(s1), 2)
+check_eq(day25(s2), 4)
+check_eq(day25(s3), 3)
+check_eq(day25(s4), 8)
+puzzle.verify(1, day25)  # ~93 ms.
 
 # %%
 puzzle.verify(2, lambda s: '')  # (No "Part 2" on last day.)
@@ -3666,15 +3666,26 @@ if 0:  # Compute min execution times over several calls.
   advent.show_times(recompute=True, repeat=3)
 
 # %%
-if 0:  # Look for unwanted pollution of namespace.
-  print(textwrap.fill(' '.join(var for var, value in globals().items() if (
-      not var.startswith('_') and not repr(value).startswith(
-          ('<module', '<class', 'typing.', 'functools.partial('))))))
+if 1:  # Look for unwanted pollution of namespace.
+  print(textwrap.fill(' '.join(name for name, value in globals().items() if not (
+      name.startswith(('_', 'day')) or name in _ORIGINAL_GLOBALS))))
 
 # %%
 if 0:  # Save puzzle inputs and answers to a compressed archive for downloading.
   # Create a new tar.gz file.
-  hh.run(f"""tar -C ~/.config/aocd/'{PROFILE.replace("_", " ")}' -czf /content/data.tar.gz *.txt""")
+  hh.run(f"""cd /mnt/c/hh/tmp && cp -rp ~/.config/aocd/'{PROFILE.replace("_", " ")}' '{PROFILE}' && tar -czf '{PROFILE}.tar.gz' '{PROFILE}'""")
+
+# %%
+if 0:  # Look for misspelled words.
+  hh.run(rf"""cat advent_of_code_{YEAR}.py | perl -pe "s@https?:/.*?[)> ]@@g; s/'/ /g; s/\\\\n//g;" | spell | sort -u || true""")
+
+# %%
+if 0:  # Lint.
+  hh.run('echo flake8; flake8')
+  hh.run('echo mypy; mypy . || true')
+  hh.run('echo autopep8; autopep8 -j8 -d .')
+  hh.run('echo pylint; pylint -j8 . || true')
+  print('All ran.')
 
 # %%
 hh.show_notebook_cell_top_times()
@@ -3685,6 +3696,6 @@ hh.show_notebook_cell_top_times()
 # %% [markdown]
 # <!-- For Emacs:
 # Local Variables:
-# fill-column: 80
+# fill-column: 100
 # End:
 # -->
