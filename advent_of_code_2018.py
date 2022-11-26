@@ -169,7 +169,7 @@ class Machine:
   def read_instructions(self, s: str) -> None:
     lines = s.strip('\n').split('\n')
     if lines[0].startswith('#ip'):
-      self.ip_register = int(re.fullmatch(r'#ip (\d+)', lines[0]).group(1))
+      self.ip_register = int(hh.re_groups(r'^#ip (\d+)$', lines[0])[0])
       lines = lines[1:]
     self.instructions = []
     for line in lines:
@@ -290,10 +290,10 @@ puzzle = advent.puzzle(day=3)
 # %%
 def day3a(s, part2=False, check_single_solution=False):
   lines = s.strip('\n').split('\n')
-  pattern = r'#(\d+) @ (\d+),(\d+): (\d+)x(\d+)'
+  pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
   grid: dict[tuple[int, int], int] = collections.defaultdict(int)
   for line in lines:
-    claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
+    claim, l, t, w, h = map(int, hh.re_groups(pattern, line))
     for y in range(t, t + h):
       for x in range(l, l + w):
         grid[y, x] += 1
@@ -303,7 +303,7 @@ def day3a(s, part2=False, check_single_solution=False):
 
   found: list[int] = []
   for line in lines:
-    claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
+    claim, l, t, w, h = map(int, hh.re_groups(pattern, line))
     if all(grid[y, x] == 1 for y in range(t, t + h) for x in range(l, l + w)):
       found.append(claim)
       if not check_single_solution:
@@ -324,11 +324,11 @@ puzzle.verify(2, day3_part2a)  # ~300 ms.
 # %%
 def day3(s, part2=False, visualize=False):  # Faster with numpy.
   lines = s.strip('\n').split('\n')
-  pattern = r'#(\d+) @ (\d+),(\d+): (\d+)x(\d+)'
+  pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
   shape = (1000, 1000)
   grid = np.full(shape, 0)
   for line in lines:
-    claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
+    claim, l, t, w, h = map(int, hh.re_groups(pattern, line))
     grid[t: t + h, l: l + w] += 1
 
   if not part2:
@@ -336,7 +336,7 @@ def day3(s, part2=False, visualize=False):  # Faster with numpy.
 
   claim = -1
   for line in lines:
-    claim, l, t, w, h = map(int, re.fullmatch(pattern, line).groups())
+    claim, l, t, w, h = map(int, hh.re_groups(pattern, line))
     if np.all(grid[t: t + h, l: l + w] == 1):
       break
 
@@ -408,9 +408,9 @@ def day4(s, part2=False):
   date_guard = np.empty(num_dates, dtype=int)
   row = -1
   for line in lines:
-    minute, = map(int, re.search(r' \d\d:(\d\d)', line).groups())
+    minute, = map(int, hh.re_groups(r' \d\d:(\d\d)', line))
     if 'Guard' in line:
-      guard, = map(int, re.search(r' Guard #(\d+) begins shift', line).groups())
+      guard, = map(int, hh.re_groups(r' Guard #(\d+) begins shift', line))
       row += 1
       date_guard[row] = guard
     elif 'falls asleep' in line:
@@ -665,8 +665,8 @@ def day7(s, part2=False, num_workers=5, cost_base=60):
   dependencies = collections.defaultdict(set)
   nodes = set()
   for line in s.strip('\n').split('\n'):
-    pattern = r'Step (.) must be finished before step (.) can begin\.'
-    node1, node2 = re.fullmatch(pattern, line).groups()
+    pattern = r'^Step (.) must be finished before step (.) can begin\.$'
+    node1, node2 = hh.re_groups(pattern, line)
     nodes |= {node1, node2}
     dependencies[node2].add(node1)
   nodelist = sorted(nodes)
@@ -793,8 +793,8 @@ puzzle = advent.puzzle(day=9)
 
 # %%
 def day9a(s, part2=False):  # Compact.
-  pattern = r'(\d+) players; last marble is worth (\d+) points'
-  num_players, last_marble = map(int, re.fullmatch(pattern, s.strip()).groups())
+  pattern = r'^(\d+) players; last marble is worth (\d+) points$'
+  num_players, last_marble = map(int, hh.re_groups(pattern, s.strip()))
   if part2:
     last_marble *= 100
   marbles = collections.deque([0])
@@ -822,8 +822,8 @@ day9_part2a = functools.partial(day9a, part2=True)
 
 # %%
 def day9b(s, part2=False):  # Slightly faster with quick inner loop.
-  pattern = r'(\d+) players; last marble is worth (\d+) points'
-  num_players, last_marble = map(int, re.fullmatch(pattern, s.strip()).groups())
+  pattern = r'^(\d+) players; last marble is worth (\d+) points$'
+  num_players, last_marble = map(int, hh.re_groups(pattern, s.strip()))
   if part2:
     last_marble *= 100
   # Note that numba does not support deque; there is a feature request:
@@ -865,8 +865,8 @@ day9_part2b = functools.partial(day9b, part2=True)
 
 # %%
 def day9(s, part2=False):  # Fastest.  Singly-linked list is sufficient!
-  pattern = r'(\d+) players; last marble is worth (\d+) points'
-  num_players, last_marble = map(int, re.fullmatch(pattern, s.strip()).groups())
+  pattern = r'^(\d+) players; last marble is worth (\d+) points$'
+  num_players, last_marble = map(int, hh.re_groups(pattern, s.strip()))
   if part2:
     last_marble *= 100
 
@@ -969,8 +969,8 @@ if 0:  # https://pypi.org/project/advent-of-code-ocr/
 def day10a(s, part2=False):  # Slow.
   positions0, velocities0 = [], []
   for line in s.strip('\n').split('\n'):
-    pattern = r'position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>'
-    x, y, dx, dy = map(int, re.fullmatch(pattern, line).groups())
+    pattern = r'^position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>$'
+    x, y, dx, dy = map(int, hh.re_groups(pattern, line))
     positions0.append([y, x])
     velocities0.append([dy, dx])
   positions, velocities = np.array(positions0), np.array(velocities0)
@@ -1005,8 +1005,8 @@ puzzle.verify(2, day10_part2a)  # ~230 ms.
 def day10(s, part2=False, visualize=False):  # Quick initial jump; visualize.
   positions0, velocities0 = [], []
   for line in s.strip('\n').split('\n'):
-    pattern = r'position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>'
-    x, y, dx, dy = map(int, re.fullmatch(pattern, line).groups())
+    pattern = r'^position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>$'
+    x, y, dx, dy = map(int, hh.re_groups(pattern, line))
     positions0.append([y, x])
     velocities0.append([dy, dx])
   positions, velocities = np.array(positions0), np.array(velocities0)
@@ -2229,8 +2229,8 @@ def day17(s, part2=False, visualize=False):
   grid = {}
 
   for line in s.strip('\n').split('\n'):
-    pattern = r'[xy]=(\d+), [xy]=(\d+)\.\.(\d+)'
-    x, y0, y1 = map(int, re.fullmatch(pattern, line).groups())
+    pattern = r'^[xy]=(\d+), [xy]=(\d+)\.\.(\d+)$'
+    x, y0, y1 = map(int, hh.re_groups(pattern, line))
     for y in range(y0, y1 + 1):
       yx = (y, x) if line[0] == 'x' else (x, y)
       grid[yx[0], yx[1]] = '#'
@@ -2558,7 +2558,7 @@ puzzle = advent.puzzle(day=20)
 # this simpler case.
 
 def day20(s, part2=False, visualize=False):
-  s, = re.fullmatch(r'\^([SNEW(|)]+)\$', s.strip()).groups()
+  s, = hh.re_groups(r'^\^([SNEW(|)]+)\$$', s.strip())
 
   def parse(s):
     l = []
@@ -2674,7 +2674,7 @@ _ = day20_part2(puzzle.input, visualize=True)
 # %%
 if 0:  # Due to backtracking, one cannot simply look for longest expansion.
   def day20a(s):
-    s, = re.fullmatch(r'\^([SNEW(|)]+)\$', s.strip()).groups()
+    s, = hh.re_groups(r'^\^([SNEW(|)]+)\$$', s.strip())
 
     def max_regex_length(s):
       max_len = 0
@@ -3010,9 +3010,8 @@ else:
 # %%
 def day22(s, part2=False, pad=60, visualize=False):  # With numba.
   lines = s.strip('\n').split('\n')
-  depth = int(re.fullmatch(r'depth: (\d+)', lines[0]).group(1))
-  pattern = r'target: (\d+),(\d+)'
-  target_yx = tuple(map(int, re.fullmatch(pattern, lines[1]).groups()))[::-1]
+  depth = int(hh.re_groups(r'^depth: (\d+)$', lines[0])[0])
+  target_yx = tuple(map(int, hh.re_groups(r'^target: (\d+),(\d+)$', lines[1])))[::-1]
 
   def construct_grid(shape):
     erosion_level = np.empty(shape, dtype=np.int64)
@@ -3147,8 +3146,8 @@ pos=<10,10,10>, r=5
 def day23a(s, part2=False):
   positions0, radii0 = [], []
   for line in s.strip('\n').split('\n'):
-    pattern = r'pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)'
-    x, y, z, r = map(int, re.fullmatch(pattern, line).groups())
+    pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
+    x, y, z, r = map(int, hh.re_groups(pattern, line))
     positions0.append((x, y, z))
     radii0.append(r)
   positions, radii = np.array(positions0), np.array(radii0)
@@ -3245,7 +3244,7 @@ def day23a(s, part2=False):
       c = np.array(c, dtype=np.float64)
       matrix_ub = np.array(hvalues)
       b_ub = np.nan_to_num(best_polytope, posinf=10**10)
-      res = scipy.optimize.linprog(c, matrix_ub, b_ub, method='simplex')
+      res = scipy.optimize.linprog(c, matrix_ub, b_ub, method='highs')
       check_eq(res.success, True)
       # Handle the case of results with half-integer coordinates.
       upper = tuple(np.floor(np.mod(res.x, 1.0) + 1.499).astype(int))
@@ -3278,8 +3277,8 @@ check_eq(day23_part2a(s2), 36)
 def day23b(s, part2=False):
   # Divide-and-conquer using octree decomposition, inspired by
   # https://github.com/wimglenn/advent-of-code-wim/blob/master/aoc_wim/aoc2018/q23.py.
-  pattern = r'pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)'
-  data: Any = np.array([list(map(int, re.fullmatch(pattern, line).groups()))
+  pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
+  data: Any = np.array([list(map(int, hh.re_groups(pattern, line)))
                         for line in s.strip('\n').split('\n')])
   xs, rs = data[:, :3], data[:, 3]
   i = rs.argmax()
@@ -3329,9 +3328,9 @@ def day23(s, part2=False):
   # Divide-and-conquer using octree decomposition, adapted from
   # https://github.com/wimglenn/advent-of-code-wim/blob/master/aoc_wim/aoc2018/q23.py.
   # Improved to be robust (not assuming cubes with power-of-two dimensions).
-  pattern = r'pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)'
-  data: Any = np.array([list(map(int, re.fullmatch(pattern, line).groups()))
-                       for line in s.strip('\n').split('\n')])
+  pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
+  data: Any = np.array([list(map(int, hh.re_groups(pattern, line)))
+                        for line in s.strip('\n').split('\n')])
   xs, rs = data[:, :-1], data[:, -1]
   if not part2:
     i = rs.argmax()
@@ -3404,10 +3403,10 @@ def day24(s, verbose=False, boost=0, immune_must_win=False):
     def __init__(self, army, id, line):
       self.army = army
       self.id = id
-      pattern = (r'(\d+) units each with (\d+) hit points( \(.*\))? with'
-                 r' an attack that does (\d+) (.*) damage at initiative (\d+)')
+      pattern = (r'^(\d+) units each with (\d+) hit points( \(.*\))? with'
+                 r' an attack that does (\d+) (.*) damage at initiative (\d+)$')
       (units, hit_points, attributes, attack_damage, attack_type,
-       initiative) = re.fullmatch(pattern, line).groups()
+       initiative) = hh.re_groups(pattern, line)
       (self.units, self.hit_points, self.attack_damage, self.attack_type,
        self.initiative) = (int(units), int(hit_points), int(attack_damage),
                            attack_type, int(initiative))
