@@ -291,7 +291,7 @@ puzzle = advent.puzzle(day=3)
 def day3a(s, *, part2=False, check_single_solution=False):
   lines = s.strip('\n').split('\n')
   pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
-  grid: dict[tuple[int, int], int] = collections.defaultdict(int)
+  grid: collections.defaultdict[tuple[int, int], int] = collections.defaultdict(int)
   for line in lines:
     claim, l, t, w, h = map(int, hh.re_groups(pattern, line))
     for y in range(t, t + h):
