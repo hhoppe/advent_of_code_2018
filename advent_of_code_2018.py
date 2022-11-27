@@ -81,8 +81,9 @@ YEAR = 2018
 PROFILE = 'google.Hugues_Hoppe.965276'
 # PROFILE = 'github.hhoppe.1452460'
 TAR_URL = f'https://github.com/hhoppe/advent_of_code_{YEAR}/raw/main/data/{PROFILE}.tar.gz'
-hh.run(f"if [ ! -d data/{PROFILE} ]; then (mkdir -p data && cd data &&"
-       f" wget -q {TAR_URL} && tar xzf {PROFILE}.tar.gz); fi")
+if 1:
+  hh.run(f"if [ ! -d data/{PROFILE} ]; then (mkdir -p data && cd data &&"
+         f" wget -q {TAR_URL} && tar xzf {PROFILE}.tar.gz); fi")
 INPUT_URL = f'data/{PROFILE}/{{year}}_{{day:02d}}_input.txt'
 ANSWER_URL = f'data/{PROFILE}/{{year}}_{{day:02d}}{{part_letter}}_answer.txt'
 
@@ -106,8 +107,7 @@ except ModuleNotFoundError:
   numba_njit = hh.noop_decorator
 
 # %%
-advent = advent_of_code_hhoppe.Advent(
-    year=YEAR, input_url=INPUT_URL, answer_url=ANSWER_URL)
+advent = advent_of_code_hhoppe.Advent(year=YEAR, input_url=INPUT_URL, answer_url=ANSWER_URL)
 
 # %%
 hh.adjust_jupyterlab_markdown_width()
@@ -288,7 +288,7 @@ puzzle = advent.puzzle(day=3)
 
 
 # %%
-def day3a(s, part2=False, check_single_solution=False):
+def day3a(s, *, part2=False, check_single_solution=False):
   lines = s.strip('\n').split('\n')
   pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
   grid: dict[tuple[int, int], int] = collections.defaultdict(int)
@@ -322,7 +322,7 @@ puzzle.verify(2, day3_part2a)  # ~300 ms.
 
 
 # %%
-def day3(s, part2=False, visualize=False):  # Faster with numpy.
+def day3(s, *, part2=False, visualize=False):  # Faster with numpy.
   lines = s.strip('\n').split('\n')
   pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
   shape = 1000, 1000
@@ -400,7 +400,7 @@ s1 = """
 
 
 # %%
-def day4(s, part2=False):
+def day4(s, *, part2=False):
   lines = s.strip('\n').split('\n')
   lines = sorted(lines)
   num_dates = sum('Guard' in line for line in lines)
@@ -460,7 +460,7 @@ puzzle = advent.puzzle(day=5)
 
 
 # %%
-def day5a(s, part2=False):  # Slow.
+def day5a(s, *, part2=False):  # Slow.
 
   def simplify_polymer(s):
     pairs = [chr(ord('a') + i) + chr(ord('A') + i) for i in range(26)]
@@ -490,7 +490,7 @@ check_eq(day5_part2a('dabAcCaCBAcCcaDA'), 4)
 # puzzle.verify(2, day5_part2a)  # ~80 s.
 
 # %%
-def day5b(s, part2=False):  # Faster, using stack and numba.
+def day5b(s, *, part2=False):  # Faster, using stack and numba.
 
   @numba_njit(cache=True)
   def simplify_polymer(s):
@@ -521,7 +521,7 @@ puzzle.verify(2, day5_part2b)  # ~260 ms with numba (~440 ms without numba)
 
 
 # %%
-def day5(s, part2=False):  # Fastest; nested loops in numba.
+def day5(s, *, part2=False):  # Fastest; nested loops in numba.
 
   @numba_njit(cache=True)
   def length_of_simplified_polymer(codes):
@@ -586,7 +586,7 @@ s1 = """
 
 
 # %%
-def day6(s, part2=False, max_sum=10_000, visualize=False):
+def day6(s, *, part2=False, max_sum=10_000, visualize=False):
   yxs = []
   for line in s.strip('\n').split('\n'):
     x, y = map(int, line.split(','))
@@ -660,7 +660,7 @@ Step F must be finished before step E can begin.
 
 
 # %%
-def day7(s, part2=False, num_workers=5, cost_base=60):
+def day7(s, *, part2=False, num_workers=5, cost_base=60):
   dependencies = collections.defaultdict(set)
   nodes = set()
   for line in s.strip('\n').split('\n'):
@@ -732,7 +732,7 @@ puzzle = advent.puzzle(day=8)
 
 
 # %%
-def day8(s, part2=False):
+def day8(s, *, part2=False):
 
   @dataclasses.dataclass
   class TreeNode:
@@ -791,7 +791,7 @@ puzzle = advent.puzzle(day=9)
 
 
 # %%
-def day9a(s, part2=False):  # Compact.
+def day9a(s, *, part2=False):  # Compact.
   pattern = r'^(\d+) players; last marble is worth (\d+) points$'
   num_players, last_marble = map(int, hh.re_groups(pattern, s.strip()))
   if part2:
@@ -820,7 +820,7 @@ day9_part2a = functools.partial(day9a, part2=True)
 # puzzle.verify(2, day9_part2a)  # ~2000 ms.
 
 # %%
-def day9b(s, part2=False):  # Slightly faster with quick inner loop.
+def day9b(s, *, part2=False):  # Slightly faster with quick inner loop.
   pattern = r'^(\d+) players; last marble is worth (\d+) points$'
   num_players, last_marble = map(int, hh.re_groups(pattern, s.strip()))
   if part2:
@@ -863,7 +863,7 @@ day9_part2b = functools.partial(day9b, part2=True)
 # puzzle.verify(2, day9_part2b)  # ~1800 ms.
 
 # %%
-def day9(s, part2=False):  # Fastest.  Singly-linked list is sufficient!
+def day9(s, *, part2=False):  # Fastest.  Singly-linked list is sufficient!
   pattern = r'^(\d+) players; last marble is worth (\d+) points$'
   num_players, last_marble = map(int, hh.re_groups(pattern, s.strip()))
   if part2:
@@ -965,7 +965,7 @@ if 0:  # https://pypi.org/project/advent-of-code-ocr/
 
 
 # %%
-def day10a(s, part2=False):  # Slow.
+def day10a(s, *, part2=False):  # Slow.
   positions0, velocities0 = [], []
   for line in s.strip('\n').split('\n'):
     pattern = r'^position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>$'
@@ -1001,7 +1001,7 @@ puzzle.verify(2, day10_part2a)  # ~230 ms.
 
 
 # %%
-def day10(s, part2=False, visualize=False):  # Quick initial jump; visualize.
+def day10(s, *, part2=False, visualize=False):  # Quick initial jump; visualize.
   positions0, velocities0 = [], []
   for line in s.strip('\n').split('\n'):
     pattern = r'^position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>$'
@@ -1066,7 +1066,7 @@ puzzle = advent.puzzle(day=11)
 
 
 # %%
-def day11(s, part2=False, visualize=False):
+def day11(s, *, part2=False, visualize=False):
 
   def power_level(yx, serial_number):
     rack_id = yx[1] + 10
@@ -1162,7 +1162,7 @@ initial state: #..#.#..##......###...###
 
 
 # %%
-def day12(s, part2=False, visualize=False):
+def day12(s, *, part2=False, visualize=False):
   lines = s.strip('\n').split('\n')
   assert lines[0].startswith('initial state: ') and not lines[1]
   state = lines[0][15:]
@@ -1251,7 +1251,7 @@ s2 = r"""
 
 
 # %%
-def day13(s, part2=False, verbose=False, visualize=False):
+def day13(s, *, part2=False, verbose=False, visualize=False):
 
   @dataclasses.dataclass
   class Cart:
@@ -2081,7 +2081,7 @@ check_eq(day15_part2a(s14), 1140)
 # puzzle.verify(2, day15_part2a)  # ~1600 ms.
 
 # %%
-def day15_part2(s, visualize=False):  # Faster bisection search.
+def day15_part2(s, *, visualize=False):  # Faster bisection search.
   current = 10
   low = high = None
   results = {}
@@ -2143,7 +2143,7 @@ After:  [3, 2, 2, 1]
 
 
 # %%
-def day16(s, part2=False):
+def day16(s, *, part2=False):
   s1, s2 = s.split('\n\n\n')
   machine = Machine(num_registers=4)
   num_operations = len(machine.operations)
@@ -2224,7 +2224,7 @@ y=13, x=498..504
 
 
 # %%
-def day17(s, part2=False, visualize=False):
+def day17(s, *, part2=False, visualize=False):
   grid = {}
 
   for line in s.strip('\n').split('\n'):
@@ -2330,7 +2330,7 @@ s1 = """
 
 
 # %%
-def day18(s, num_minutes=10, part2=False, visualize=False):
+def day18(s, *, num_minutes=10, part2=False, visualize=False):
   grid = hh.grid_from_string(s)
 
   def evolve_grid():
@@ -2483,7 +2483,7 @@ seti 9 0 5
 #   a += sum(factors(f))
 
 # %%
-def day19(s, part2=False, verbose=False):
+def day19(s, *, part2=False, verbose=False):
 
   def factors(n):
     result = set()
@@ -2556,7 +2556,7 @@ puzzle = advent.puzzle(day=20)
 # backtracking along edges of the tree.  My solution is likely overkill for
 # this simpler case.
 
-def day20(s, part2=False, visualize=False):
+def day20(s, *, part2=False, visualize=False):
   s, = hh.re_groups(r'^\^([SNEW(|)]+)\$$', s.strip())
 
   def parse(s):
@@ -2855,7 +2855,7 @@ def day21_test():
 # day21_test()
 
 # %%
-def day21(s, part2=False):
+def day21(s, *, part2=False):
   machine = Machine()
   machine.read_instructions(s)
 
@@ -2928,7 +2928,7 @@ target: 10,10
 
 # %%
 # https://www.reddit.com/r/adventofcode/comments/a8i1cy/comment/ecazvbe
-def day22a(s, part2=False, pad=60):  # Using networkx; slower.
+def day22a(s, *, part2=False, pad=60):  # Using networkx; slower.
   rocky, wet, narrow = 0, 1, 2
   del narrow  # unused
   torch, gear, neither = 0, 1, 2
@@ -3007,7 +3007,7 @@ else:
 
 
 # %%
-def day22(s, part2=False, pad=60, visualize=False):  # With numba.
+def day22(s, *, part2=False, pad=60, visualize=False):  # With numba.
   lines = s.strip('\n').split('\n')
   depth = int(hh.re_groups(r'^depth: (\d+)$', lines[0])[0])
   target_yx = tuple(map(int, hh.re_groups(r'^target: (\d+),(\d+)$', lines[1])))[::-1]
@@ -3142,7 +3142,7 @@ pos=<10,10,10>, r=5
 
 
 # %%
-def day23a(s, part2=False):
+def day23a(s, *, part2=False):
   positions0, radii0 = [], []
   for line in s.strip('\n').split('\n'):
     pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
@@ -3273,7 +3273,7 @@ check_eq(day23_part2a(s2), 36)
 # puzzle.verify(2, day23_part2a)  # ~2000 ms.
 
 # %%
-def day23b(s, part2=False):
+def day23b(s, *, part2=False):
   # Divide-and-conquer using octree decomposition, inspired by
   # https://github.com/wimglenn/advent-of-code-wim/blob/master/aoc_wim/aoc2018/q23.py.
   pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
@@ -3323,7 +3323,7 @@ puzzle.verify(2, day23_part2b)  # ~285 ms.
 
 
 # %%
-def day23(s, part2=False):
+def day23(s, *, part2=False):
   # Divide-and-conquer using octree decomposition, adapted from
   # https://github.com/wimglenn/advent-of-code-wim/blob/master/aoc_wim/aoc2018/q23.py.
   # Improved to be robust (not assuming cubes with power-of-two dimensions).
@@ -3383,7 +3383,7 @@ Infection:
 
 
 # %%
-def day24(s, verbose=False, boost=0, immune_must_win=False):
+def day24(s, *, verbose=False, boost=0, immune_must_win=False):
 
   @dataclasses.dataclass
   class Group:
