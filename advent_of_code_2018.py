@@ -325,7 +325,7 @@ puzzle.verify(2, day3_part2a)  # ~300 ms.
 def day3(s, part2=False, visualize=False):  # Faster with numpy.
   lines = s.strip('\n').split('\n')
   pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
-  shape = (1000, 1000)
+  shape = 1000, 1000
   grid = np.full(shape, 0)
   for line in lines:
     claim, l, t, w, h = map(int, hh.re_groups(pattern, line))
@@ -343,7 +343,7 @@ def day3(s, part2=False, visualize=False):  # Faster with numpy.
   if visualize:
     image1 = media.to_rgb(grid * 1.0)
     image2 = image1.copy()
-    image2[t: t + h, l: l + w] = (0.9, 0.9, 0.0)
+    image2[t: t + h, l: l + w] = 0.9, 0.9, 0.0
     video = [image1, image2]
     shrink = 2
     if shrink > 1:
@@ -605,8 +605,7 @@ def day6(s, part2=False, max_sum=10_000, visualize=False):
     min_manhattan = np.take_along_axis(all_manhattans, closest[None], axis=0)[0]
     count_min = np.count_nonzero(all_manhattans == min_manhattan, axis=0)
     closest[count_min > 1] = -1  # Disqualify equidistant locations.
-    unbounded = (set(closest[0]) | set(closest[-1]) |
-                 set(closest[:, 0]) | set(closest[:, -1]))
+    unbounded = set(closest[0]) | set(closest[-1]) | set(closest[:, 0]) | set(closest[:, -1])
     counts = collections.Counter(closest.flat)
     count, i = max((c, i) for i, c in counts.items()
                    if i not in unbounded | {-1})
@@ -615,9 +614,9 @@ def day6(s, part2=False, max_sum=10_000, visualize=False):
       image = cmap[closest + 1]
       unb = (closest[..., None] == np.array(list(unbounded))).sum(axis=-1) > 0
       image[unb] += 105
-      image[closest == -1] = (255, 255, 255)
+      image[closest == -1] = 255, 255, 255
       image2 = image.copy()
-      image2[closest == i] = (255, 0, 0)
+      image2[closest == i] = 255, 0, 0
       media.show_video([image, image2], codec='gif', fps=1)
     return count
 
@@ -1287,7 +1286,7 @@ def day13(s, part2=False, verbose=False, visualize=False):
     if visualize:
       image = image0.copy()
       for cart in carts:
-        image[cart.yx] = (0, 100, 0)
+        image[cart.yx] = 0, 100, 0
       images.append(image)
     if verbose:
       print(text_from_grid())
@@ -1303,7 +1302,7 @@ def day13(s, part2=False, verbose=False, visualize=False):
         if not part2:
           if visualize:
             image = image.copy()
-            image[new_yx] = (255, 0, 0)
+            image[new_yx] = 255, 0, 0
             images.append(image)
             images = [im.repeat(3, axis=0).repeat(3, axis=1) for im in images]
             images = [images[0]] * 20 + images + [images[-1]] * 40
@@ -1312,7 +1311,7 @@ def day13(s, part2=False, verbose=False, visualize=False):
           print(f'first collision at iteration={iteration}')
           return f'{new_yx[1]},{new_yx[0]}'
         for crashed_cart in [cart, cart2]:
-          crashed_cart.yx = (-1, -1)
+          crashed_cart.yx = -1, -1
         continue
       ch = grid[new_yx]
       assert ch in '/\\+-|', ord(ch)
@@ -2981,12 +2980,12 @@ def day22a(s, part2=False, pad=60):  # Using networkx; slower.
 
   depth, target = get_cave()
   if not part2:
-    shape = (target[0] + 1, target[1] + 1)
+    shape = target[0] + 1, target[1] + 1
     grid = generate_grid(depth, shape)
     return sum(v[2] for v in grid.values())
 
   import networkx as nx
-  shape = (target[0] + pad, target[1] + pad)
+  shape = target[0] + pad, target[1] + pad
   grid = {c: v[2] for c, v in (generate_grid(depth, shape)).items()}
   graph = generate_graph(grid, shape)
   use_astar = True
@@ -3347,10 +3346,9 @@ def day23(s, part2=False):
         *(((l, m), (m + 1, h)) if m < h else ((l, h),)
           for l, m, h in zip(xl, xm, xh))):
       xl, xh = np.array(child_min_max).T
-      n_out = ((np.maximum(xl - xs, 0) + np.maximum(xs - xh, 0)).sum(axis=1) >
-               rs).sum()  # Maximize num in-range = minimize num out-of-range.
-      heapq.heappush(
-          pq, (n_out, (xh - xl).max(), abs(xl).sum(), tuple(xl), tuple(xh)))
+      # Maximize num in-range = minimize num out-of-range.
+      n_out = ((np.maximum(xl - xs, 0) + np.maximum(xs - xh, 0)).sum(axis=1) > rs).sum()
+      heapq.heappush(pq, (n_out, (xh - xl).max(), abs(xl).sum(), tuple(xl), tuple(xh)))
 
 
 check_eq(day23(s1), 7)
@@ -3405,11 +3403,10 @@ def day24(s, verbose=False, boost=0, immune_must_win=False):
       self.id = id
       pattern = (r'^(\d+) units each with (\d+) hit points( \(.*\))? with'
                  r' an attack that does (\d+) (.*) damage at initiative (\d+)$')
-      (units, hit_points, attributes, attack_damage, attack_type,
-       initiative) = hh.re_groups(pattern, line)
-      (self.units, self.hit_points, self.attack_damage, self.attack_type,
-       self.initiative) = (int(units), int(hit_points), int(attack_damage),
-                           attack_type, int(initiative))
+      units, hit_points, attributes, attack_damage, attack_type, initiative = hh.re_groups(
+          pattern, line)
+      self.units, self.hit_points, self.attack_damage, self.attack_type, self.initiative = (
+          int(units), int(hit_points), int(attack_damage), attack_type, int(initiative))
       self.attributes = {'immune': set(), 'weak': set()}
       if attributes:
         for attribute in attributes[2:-1].split('; '):
