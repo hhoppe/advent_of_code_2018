@@ -316,9 +316,9 @@ def day3a(s, *, part2=False, check_single_solution=False):
 check_eq(day3a('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 4)
 puzzle.verify(1, day3a)  # ~300 ms.
 
-day3_part2a = functools.partial(day3a, part2=True)
-check_eq(day3_part2a('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
-puzzle.verify(2, day3_part2a)  # ~300 ms.
+day3a_part2 = functools.partial(day3a, part2=True)
+check_eq(day3a_part2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
+puzzle.verify(2, day3a_part2)  # ~300 ms.
 
 
 # %%
@@ -485,9 +485,9 @@ def day5a(s, *, part2=False):  # Slow.
 check_eq(day5a('dabAcCaCBAcCcaDA'), 10)
 # puzzle.verify(1, day5a)  # ~3 s.
 
-day5_part2a = functools.partial(day5a, part2=True)
-check_eq(day5_part2a('dabAcCaCBAcCcaDA'), 4)
-# puzzle.verify(2, day5_part2a)  # ~80 s.
+day5a_part2 = functools.partial(day5a, part2=True)
+check_eq(day5a_part2('dabAcCaCBAcCcaDA'), 4)
+# puzzle.verify(2, day5a_part2)  # ~80 s.
 
 # %%
 def day5b(s, *, part2=False):  # Faster, using stack and numba.
@@ -515,9 +515,9 @@ def day5b(s, *, part2=False):  # Faster, using stack and numba.
 check_eq(day5b('dabAcCaCBAcCcaDA'), 10)  # ~700 ms for numba compilation.
 puzzle.verify(1, day5b)  # ~ 20 ms.
 
-day5_part2b = functools.partial(day5b, part2=True)
-check_eq(day5_part2b('dabAcCaCBAcCcaDA'), 4)
-puzzle.verify(2, day5_part2b)  # ~260 ms with numba (~440 ms without numba)
+day5b_part2 = functools.partial(day5b, part2=True)
+check_eq(day5b_part2('dabAcCaCBAcCcaDA'), 4)
+puzzle.verify(2, day5b_part2)  # ~260 ms with numba (~440 ms without numba)
 
 
 # %%
@@ -816,8 +816,8 @@ check_eq(day9a('21 players; last marble is worth 6111 points'), 54718)
 check_eq(day9a('30 players; last marble is worth 5807 points'), 37305)
 puzzle.verify(1, day9a)  # ~20 ms.
 
-day9_part2a = functools.partial(day9a, part2=True)
-# puzzle.verify(2, day9_part2a)  # ~2000 ms.
+day9a_part2 = functools.partial(day9a, part2=True)
+# puzzle.verify(2, day9a_part2)  # ~2000 ms.
 
 # %%
 def day9b(s, *, part2=False):  # Slightly faster with quick inner loop.
@@ -859,8 +859,8 @@ check_eq(day9b('21 players; last marble is worth 6111 points'), 54718)
 check_eq(day9b('30 players; last marble is worth 5807 points'), 37305)
 puzzle.verify(1, day9b)  # ~17 ms.
 
-day9_part2b = functools.partial(day9b, part2=True)
-# puzzle.verify(2, day9_part2b)  # ~1800 ms.
+day9b_part2 = functools.partial(day9b, part2=True)
+# puzzle.verify(2, day9b_part2)  # ~1800 ms.
 
 # %%
 def day9(s, *, part2=False):  # Fastest.  Singly-linked list is sufficient!
@@ -995,9 +995,9 @@ def day10a(s, *, part2=False):  # Slow.
 check_eq(day10a(s1), 'HI')
 puzzle.verify(1, day10a)  # ~230 ms.
 
-day10_part2a = functools.partial(day10a, part2=True)
-check_eq(day10_part2a(s1), 3)
-puzzle.verify(2, day10_part2a)  # ~230 ms.
+day10a_part2 = functools.partial(day10a, part2=True)
+check_eq(day10a_part2(s1), 3)
+puzzle.verify(2, day10a_part2)  # ~230 ms.
 
 
 # %%
@@ -1359,7 +1359,7 @@ puzzle = advent.puzzle(day=14)
 
 
 # %%
-def day14_part1a(s):  # Slow.
+def day14a_part1(s):  # Slow.
   num_recipes = int(s)
   recipes = [3, 7]
   indices = [0, 1]
@@ -1374,11 +1374,11 @@ def day14_part1a(s):  # Slow.
   return ''.join(map(str, recipes[num_recipes:num_recipes + 10]))
 
 
-check_eq(day14_part1a('9'), '5158916779')
-check_eq(day14_part1a('5'), '0124515891')
-check_eq(day14_part1a('18'), '9251071085')
-check_eq(day14_part1a('2018'), '5941429882')
-puzzle.verify(1, day14_part1a)  # ~820 ms.
+check_eq(day14a_part1('9'), '5158916779')
+check_eq(day14a_part1('5'), '0124515891')
+check_eq(day14a_part1('18'), '9251071085')
+check_eq(day14a_part1('2018'), '5941429882')
+puzzle.verify(1, day14a_part1)  # ~820 ms.
 
 
 # %%
@@ -1420,7 +1420,7 @@ puzzle.verify(1, day14_part1)  # ~8 ms.
 
 
 # %%
-def day14_part2a(s):  # Slow.
+def day14a_part2(s):  # Slow.
   pattern = list(map(int, s.strip()))
   recipes = [3, 7]
   indices = [0, 1]
@@ -1435,12 +1435,12 @@ def day14_part2a(s):  # Slow.
         return len(recipes) - len(pattern)
     indices = [(index + 1 + recipes[index]) % len(recipes) for index in indices]
 
-check_eq(day14_part2a('92510'), 18)
-check_eq(day14_part2a('59414'), 2018)
-# puzzle.verify(2, day14_part2a)  # ~30 s.
+check_eq(day14a_part2('92510'), 18)
+check_eq(day14a_part2('59414'), 2018)
+# puzzle.verify(2, day14a_part2)  # ~30 s.
 
 # %%
-def day14_part2b(s):  # Fast using numba.
+def day14b_part2(s):  # Fast using numba.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
@@ -1486,15 +1486,15 @@ def day14_part2b(s):  # Fast using numba.
   return func(pattern)
 
 
-check_eq(day14_part2b('51589'), 9)
-check_eq(day14_part2b('01245'), 5)
-check_eq(day14_part2b('92510'), 18)
-check_eq(day14_part2b('59414'), 2018)
-puzzle.verify(2, day14_part2b)  # ~360 ms.
+check_eq(day14b_part2('51589'), 9)
+check_eq(day14b_part2('01245'), 5)
+check_eq(day14b_part2('92510'), 18)
+check_eq(day14b_part2('59414'), 2018)
+puzzle.verify(2, day14b_part2)  # ~360 ms.
 
 
 # %%
-def day14_part2c(s):  # Faster by generating batches.
+def day14c_part2(s):  # Faster by generating batches.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
@@ -1543,15 +1543,15 @@ def day14_part2c(s):  # Faster by generating batches.
   return func(pattern)
 
 
-check_eq(day14_part2c('51589'), 9)
-check_eq(day14_part2c('01245'), 5)
-check_eq(day14_part2c('92510'), 18)
-check_eq(day14_part2c('59414'), 2018)
-puzzle.verify(2, day14_part2c)  # ~190 ms.
+check_eq(day14c_part2('51589'), 9)
+check_eq(day14c_part2('01245'), 5)
+check_eq(day14c_part2('92510'), 18)
+check_eq(day14c_part2('59414'), 2018)
+puzzle.verify(2, day14c_part2)  # ~190 ms.
 
 
 # %%
-def day14_part2d(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
+def day14d_part2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
   pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
 
   @numba_njit(cache=True)
@@ -1629,11 +1629,11 @@ def day14_part2d(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subs
   return func(pattern)
 
 
-check_eq(day14_part2d('51589'), 9)
-check_eq(day14_part2d('01245'), 5)
-check_eq(day14_part2d('92510'), 18)
-check_eq(day14_part2d('59414'), 2018)
-puzzle.verify(2, day14_part2d)  # ~250 ms is slower than naive algorithm.
+check_eq(day14d_part2('51589'), 9)
+check_eq(day14d_part2('01245'), 5)
+check_eq(day14d_part2('92510'), 18)
+check_eq(day14d_part2('59414'), 2018)
+puzzle.verify(2, day14d_part2)  # ~250 ms is slower than naive algorithm.
 
 
 # %%
@@ -1786,7 +1786,7 @@ s14 = """
 
 
 # %%
-def day15_part1a(s, verbose=False,
+def day15a_part1(s, verbose=False,
                  elf_attack_power=3, fail_if_elf_dies=False):
 
   @dataclasses.dataclass
@@ -1900,14 +1900,14 @@ def day15_part1a(s, verbose=False,
   # show('' + hh.string_from_grid(grid))
   return num_rounds * sum_points
 
-check_eq(day15_part1a(s1), 27730)
-check_eq(day15_part1a(s10), 36334)
-check_eq(day15_part1a(s11), 39514)
-check_eq(day15_part1a(s12), 27755)
-check_eq(day15_part1a(s13), 28944)
-check_eq(day15_part1a(s14), 18740)
+check_eq(day15a_part1(s1), 27730)
+check_eq(day15a_part1(s10), 36334)
+check_eq(day15a_part1(s11), 39514)
+check_eq(day15a_part1(s12), 27755)
+check_eq(day15a_part1(s13), 28944)
+check_eq(day15a_part1(s14), 18740)
 
-puzzle.verify(1, day15_part1a)  # ~800 ms.
+puzzle.verify(1, day15a_part1)  # ~800 ms.
 
 
 # %%
@@ -2064,7 +2064,7 @@ day15_part1(puzzle.input, visualize=True)  # ~600 ms.
 
 
 # %%
-def day15_part2a(s):  # Brute-force search of increasing attack power.
+def day15a_part2(s):  # Brute-force search of increasing attack power.
   for elf_attack_power in itertools.count(3):
     result = day15_part1(
         s, elf_attack_power=elf_attack_power, fail_if_elf_dies=True)
@@ -2072,13 +2072,13 @@ def day15_part2a(s):  # Brute-force search of increasing attack power.
       print(f'Found solution at elf_attack_power={elf_attack_power}')
       return result
 
-check_eq(day15_part2a(s1), 4988)
-check_eq(day15_part2a(s11), 31284)
-check_eq(day15_part2a(s12), 3478)
-check_eq(day15_part2a(s13), 6474)
-check_eq(day15_part2a(s14), 1140)
+check_eq(day15a_part2(s1), 4988)
+check_eq(day15a_part2(s11), 31284)
+check_eq(day15a_part2(s12), 3478)
+check_eq(day15a_part2(s13), 6474)
+check_eq(day15a_part2(s14), 1140)
 
-# puzzle.verify(2, day15_part2a)  # ~1600 ms.
+# puzzle.verify(2, day15a_part2)  # ~1600 ms.
 
 # %%
 def day15_part2(s, *, visualize=False):  # Faster bisection search.
@@ -3001,9 +3001,9 @@ puzzle.verify(1, day22a)  # ~15 ms.
 if not importlib.util.find_spec('networkx'):
   print('Module networkx is unavailable.')
 else:
-  day22_part2a = functools.partial(day22a, part2=True)
-  check_eq(day22_part2a(s1), 45)
-  # puzzle.verify(2, day22_part2a)  # ~2000 ms using Dijkstra (~2.7 s using A*).
+  day22a_part2 = functools.partial(day22a, part2=True)
+  check_eq(day22a_part2(s1), 45)
+  # puzzle.verify(2, day22a_part2)  # ~2000 ms using Dijkstra (~2.7 s using A*).
 
 
 # %%
@@ -3268,9 +3268,9 @@ def day23a(s, *, part2=False):
 check_eq(day23a(s1), 7)
 puzzle.verify(1, day23a)  # ~30 ms.
 
-day23_part2a = functools.partial(day23a, part2=True)
-check_eq(day23_part2a(s2), 36)
-# puzzle.verify(2, day23_part2a)  # ~2000 ms.
+day23a_part2 = functools.partial(day23a, part2=True)
+check_eq(day23a_part2(s2), 36)
+# puzzle.verify(2, day23a_part2)  # ~2000 ms.
 
 # %%
 def day23b(s, *, part2=False):
@@ -3317,9 +3317,9 @@ def day23b(s, *, part2=False):
 check_eq(day23b(s1), 7)
 puzzle.verify(1, day23b)  # ~4 ms.
 
-day23_part2b = functools.partial(day23b, part2=True)
-check_eq(day23_part2b(s2), 36)
-puzzle.verify(2, day23_part2b)  # ~285 ms.
+day23b_part2 = functools.partial(day23b, part2=True)
+check_eq(day23b_part2(s2), 36)
+puzzle.verify(2, day23b_part2)  # ~285 ms.
 
 
 # %%
