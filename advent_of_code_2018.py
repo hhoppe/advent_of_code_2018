@@ -167,7 +167,7 @@ class Machine:
     }
 
   def read_instructions(self, s: str) -> None:
-    lines = s.strip('\n').split('\n')
+    lines = s.splitlines()
     if lines[0].startswith('#ip'):
       self.ip_register = int(hh.re_groups(r'^#ip (\d+)$', lines[0])[0])
       lines = lines[1:]
@@ -207,7 +207,7 @@ puzzle = advent.puzzle(day=1)
 
 # %%
 def day1_part1(s):
-  entries = map(int, s.replace(', ', '\n').strip('\n').split('\n'))
+  entries = map(int, s.replace(', ', '\n').splitlines())
   return sum(entries)
 
 check_eq(day1_part1('+1, +1, +1'), 3)
@@ -218,7 +218,7 @@ puzzle.verify(1, day1_part1)  # ~0 ms.
 
 # %%
 def day1_part2(s):
-  entries = map(int, s.replace(', ', '\n').strip('\n').split('\n'))
+  entries = map(int, s.replace(', ', '\n').splitlines())
   total = 0
   found = set()
   for value in itertools.cycle(entries):
@@ -289,7 +289,7 @@ puzzle = advent.puzzle(day=3)
 
 # %%
 def day3a(s, *, part2=False, check_single_solution=False):
-  lines = s.strip('\n').split('\n')
+  lines = s.splitlines()
   pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
   grid: collections.defaultdict[tuple[int, int], int] = collections.defaultdict(int)
   for line in lines:
@@ -313,17 +313,17 @@ def day3a(s, *, part2=False, check_single_solution=False):
   return found[0]
 
 
-check_eq(day3a('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 4)
+check_eq(day3a('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2\n'), 4)
 puzzle.verify(1, day3a)  # ~300 ms.
 
 day3a_part2 = functools.partial(day3a, part2=True)
-check_eq(day3a_part2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
+check_eq(day3a_part2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2\n'), 3)
 puzzle.verify(2, day3a_part2)  # ~300 ms.
 
 
 # %%
 def day3(s, *, part2=False, visualize=False):  # Faster with numpy.
-  lines = s.strip('\n').split('\n')
+  lines = s.splitlines()
   pattern = r'^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$'
   shape = 1000, 1000
   grid = np.full(shape, 0)
@@ -354,11 +354,11 @@ def day3(s, *, part2=False, visualize=False):  # Faster with numpy.
   return claim
 
 
-check_eq(day3('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 4)
+check_eq(day3('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2\n'), 4)
 puzzle.verify(1, day3)  # ~13 ms.
 
 day3_part2 = functools.partial(day3, part2=True)
-check_eq(day3_part2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2'), 3)
+check_eq(day3_part2('#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2\n'), 3)
 puzzle.verify(2, day3_part2)  # ~21 ms.
 
 # %%
@@ -378,7 +378,7 @@ _ = day3_part2(puzzle.input, visualize=True)
 puzzle = advent.puzzle(day=4)
 
 # %%
-s1 = """
+s1 = """\
 [1518-11-01 00:00] Guard #10 begins shift
 [1518-11-01 00:05] falls asleep
 [1518-11-01 00:25] wakes up
@@ -401,7 +401,7 @@ s1 = """
 
 # %%
 def day4(s, *, part2=False):
-  lines = s.strip('\n').split('\n')
+  lines = s.splitlines()
   lines = sorted(lines)
   num_dates = sum('Guard' in line for line in lines)
   asleep = np.zeros((num_dates, 60))
@@ -575,7 +575,7 @@ puzzle.verify(2, day5_part2)  # ~43 ms.
 puzzle = advent.puzzle(day=6)
 
 # %%
-s1 = """
+s1 = """\
 1, 1
 1, 6
 8, 3
@@ -588,7 +588,7 @@ s1 = """
 # %%
 def day6(s, *, part2=False, max_sum=10_000, visualize=False):
   yxs = []
-  for line in s.strip('\n').split('\n'):
+  for line in s.splitlines():
     x, y = map(int, line.split(','))
     yxs.append((y, x))
   shape = np.max(yxs, axis=0) + 1
@@ -648,7 +648,7 @@ _ = day6_part2(puzzle.input, visualize=True)
 puzzle = advent.puzzle(day=7)
 
 # %%
-s1 = """
+s1 = """\
 Step C must be finished before step A can begin.
 Step C must be finished before step F can begin.
 Step A must be finished before step B can begin.
@@ -663,7 +663,7 @@ Step F must be finished before step E can begin.
 def day7(s, *, part2=False, num_workers=5, cost_base=60):
   dependencies = collections.defaultdict(set)
   nodes = set()
-  for line in s.strip('\n').split('\n'):
+  for line in s.splitlines():
     pattern = r'^Step (.) must be finished before step (.) can begin\.$'
     node1, node2 = hh.re_groups(pattern, line)
     nodes |= {node1, node2}
@@ -923,7 +923,7 @@ puzzle.verify(2, day9_part2)  # ~38 ms (~5100 ms without numba)
 puzzle = advent.puzzle(day=10)
 
 # %%
-s1 = """
+s1 = """\
 position=< 9,  1> velocity=< 0,  2>
 position=< 7,  0> velocity=<-1,  0>
 position=< 3, -2> velocity=<-1,  1>
@@ -967,7 +967,7 @@ if 0:  # https://pypi.org/project/advent-of-code-ocr/
 # %%
 def day10a(s, *, part2=False):  # Slow.
   positions0, velocities0 = [], []
-  for line in s.strip('\n').split('\n'):
+  for line in s.splitlines():
     pattern = r'^position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>$'
     x, y, dx, dy = map(int, hh.re_groups(pattern, line))
     positions0.append([y, x])
@@ -1003,7 +1003,7 @@ puzzle.verify(2, day10a_part2)  # ~230 ms.
 # %%
 def day10(s, *, part2=False, visualize=False):  # Quick initial jump; visualize.
   positions0, velocities0 = [], []
-  for line in s.strip('\n').split('\n'):
+  for line in s.splitlines():
     pattern = r'^position=< *(\S+), *(\S+)> velocity=< *(\S+), *(\S+)>$'
     x, y, dx, dy = map(int, hh.re_groups(pattern, line))
     positions0.append([y, x])
@@ -1141,7 +1141,7 @@ _ = day11_part2(puzzle.input, visualize=True)
 puzzle = advent.puzzle(day=12)
 
 # %%
-s1 = """
+s1 = """\
 initial state: #..#.#..##......###...###
 
 ...## => #
@@ -1163,7 +1163,7 @@ initial state: #..#.#..##......###...###
 
 # %%
 def day12(s, *, part2=False, visualize=False):
-  lines = s.strip('\n').split('\n')
+  lines = s.splitlines()
   assert lines[0].startswith('initial state: ') and not lines[1]
   state = lines[0][15:]
   rules = {''.join(key): '.' for key in itertools.product('.#', repeat=5)}
@@ -1232,22 +1232,22 @@ puzzle = advent.puzzle(day=13)
 # %%
 s1 = r"""
 /->-\        EOL
-|   |  /----\
-| /-+--+-\  |
-| | |  | v  |
-\-+-/  \-+--/
+|   |  /----\EOL
+| /-+--+-\  |EOL
+| | |  | v  |EOL
+\-+-/  \-+--/EOL
   \------/   EOL
-""".replace('EOL', '')
+"""[1:].replace('EOL', '')
 
 s2 = r"""
 />-<\  EOL
 |   |  EOL
-| /<+-\
-| | | v
-\>+</ |
-  |   ^
-  \<->/
-""".replace('EOL', '')
+| /<+-\EOL
+| | | vEOL
+\>+</ |EOL
+  |   ^EOL
+  \<->/EOL
+"""[1:].replace('EOL', '')
 
 
 # %%
@@ -1264,7 +1264,7 @@ def day13(s, *, part2=False, verbose=False, visualize=False):
   for ch in '<>v^':
     for yx in zip(*np.nonzero(grid == ch)):
       grid[yx] = {'<': '-', '>': '-', 'v': '|', '^': '|'}[ch]
-      carts.append(Cart(yx, ch))
+      carts.append(Cart(yx, ch))  # type: ignore
 
   def text_from_grid():
     grid2 = grid.copy()
@@ -1272,7 +1272,7 @@ def day13(s, *, part2=False, verbose=False, visualize=False):
       grid2[cart.yx] = cart.direction
     return hh.string_from_grid(grid2)
 
-  check_eq(text_from_grid(), s.strip('\n'))
+  check_eq(text_from_grid(), s.rstrip('\n'))
 
   if visualize:
     cmap = {' ': (250,) * 3, '+': (140, 140, 140),
@@ -1722,7 +1722,7 @@ puzzle.verify(2, day14_part2)  # ~170 ms.
 puzzle = advent.puzzle(day=15)
 
 # %%
-s1 = """
+s1 = """\
 #######
 #.G...#
 #...EG#
@@ -1732,7 +1732,7 @@ s1 = """
 #######
 """
 
-s10 = """
+s10 = """\
 #######
 #G..#E#
 #E#E.E#
@@ -1742,7 +1742,7 @@ s10 = """
 #######
 """
 
-s11 = """
+s11 = """\
 #######
 #E..EG#
 #.#G.E#
@@ -1752,7 +1752,7 @@ s11 = """
 #######
 """
 
-s12 = """
+s12 = """\
 #######
 #E.G#.#
 #.#G..#
@@ -1762,7 +1762,7 @@ s12 = """
 #######
 """
 
-s13 = """
+s13 = """\
 #######
 #.E...#
 #.#..G#
@@ -1772,7 +1772,7 @@ s13 = """
 #######
 """
 
-s14 = """
+s14 = """\
 #########
 #G......#
 #.E.#...#
@@ -1797,7 +1797,7 @@ def day15a_part1(s, verbose=False,
 
   show = hh.show if verbose else lambda *a, **k: None
   grid = hh.grid_from_string(s)
-  units = [Unit(yx, ch) for ch in 'GE' for yx in zip(*np.nonzero(grid == ch))]
+  units = [Unit(yx, ch) for ch in 'GE' for yx in zip(*np.nonzero(grid == ch))]  # type: ignore
 
   def get_opponents(unit):
     return (u for u in units if u.ch != unit.ch)
@@ -1921,7 +1921,7 @@ def day15_part1(s, visualize=False, elf_attack_power=3,
     hit_points: int = 200
 
   grid = hh.grid_from_string(s)
-  units = [Unit(yx, ch) for ch in 'GE' for yx in zip(*np.nonzero(grid == ch))]
+  units = [Unit(yx, ch) for ch in 'GE' for yx in zip(*np.nonzero(grid == ch))]  # type: ignore
 
   def get_opponents(unit):
     return (u for u in units if u.ch != unit.ch)
@@ -2135,7 +2135,7 @@ _ = day15_part2(puzzle.input, visualize=True)  # ~1300 ms.
 puzzle = advent.puzzle(day=16)
 
 # %%
-s1 = """
+s1 = """\
 Before: [3, 2, 1, 1]
 9 2 1 2
 After:  [3, 2, 2, 1]
@@ -2144,14 +2144,14 @@ After:  [3, 2, 2, 1]
 
 # %%
 def day16(s, *, part2=False):
-  s1, s2 = s.split('\n\n\n')
+  s1, s2 = s.split('\n\n\n\n')
   machine = Machine(num_registers=4)
   num_operations = len(machine.operations)
   candidates = {op: set(range(num_operations)) for op in machine.operations}
   num_compatible_with_3_or_more = 0
-  examples = s1.strip('\n').split('\n\n')
+  examples = s1.split('\n\n')
   for example in examples:
-    lines = example.split('\n')
+    lines = example.splitlines()
     check_eq(len(lines), 3)
     before = list(map(int, lines[0][9:-1].split(',')))
     codes = list(map(int, lines[1].split()))
@@ -2182,7 +2182,7 @@ def day16(s, *, part2=False):
   print(operation_from_opcode)
 
   machine = Machine(num_registers=4)
-  for line in s2.strip('\n').split('\n'):
+  for line in s2.splitlines():
     codes = list(map(int, line.split()))
     check_eq(len(codes), 4)
     opcode, *operands = codes
@@ -2211,7 +2211,7 @@ puzzle.verify(2, day16_part2)  # ~22 ms.
 puzzle = advent.puzzle(day=17)
 
 # %%
-s1 = """
+s1 = """\
 x=495, y=2..7
 y=7, x=495..501
 x=501, y=3..7
@@ -2227,7 +2227,7 @@ y=13, x=498..504
 def day17(s, *, part2=False, visualize=False):
   grid = {}
 
-  for line in s.strip('\n').split('\n'):
+  for line in s.splitlines():
     pattern = r'^[xy]=(\d+), [xy]=(\d+)\.\.(\d+)$'
     x, y0, y1 = map(int, hh.re_groups(pattern, line))
     for y in range(y0, y1 + 1):
@@ -2315,7 +2315,7 @@ puzzle.verify(2, day17_part2)  # ~110 ms.
 puzzle = advent.puzzle(day=18)
 
 # %%
-s1 = """
+s1 = """\
 .#.#...|#.
 .....#|##|
 .|..|...#.
@@ -2412,7 +2412,7 @@ _ = day18_part2(puzzle.input, visualize=True)
 puzzle = advent.puzzle(day=19)
 
 # %%
-s1 = """
+s1 = """\
 #ip 0
 seti 5 0 1
 seti 6 0 2
@@ -2913,7 +2913,7 @@ puzzle.verify(2, day21_part2)  # ~630 ms.
 puzzle = advent.puzzle(day=22)
 
 # %%
-s1 = """
+s1 = """\
 depth: 510
 target: 10,10
 """
@@ -2936,7 +2936,7 @@ def day22a(s, *, part2=False, pad=60):  # Using networkx; slower.
                  neither: (torch, neither)}
 
   def get_cave():
-    lines = iter(line.strip() for line in s.strip('\n').split('\n'))
+    lines = iter(line for line in s.splitlines())
     depth = int(next(lines)[len('depth: '):])
     target = tuple(int(n) for n in next(lines)[len('target: '):].split(','))
     return depth, target
@@ -3008,7 +3008,7 @@ else:
 
 # %%
 def day22(s, *, part2=False, pad=60, visualize=False):  # With numba.
-  lines = s.strip('\n').split('\n')
+  lines = s.splitlines()
   depth = int(hh.re_groups(r'^depth: (\d+)$', lines[0])[0])
   target_yx = tuple(map(int, hh.re_groups(r'^target: (\d+),(\d+)$', lines[1])))[::-1]
 
@@ -3118,7 +3118,7 @@ _ = day22_part2(puzzle.input, visualize=True)  # ~1 s.
 puzzle = advent.puzzle(day=23)
 
 # %%
-s1 = """
+s1 = """\
 pos=<0,0,0>, r=4
 pos=<1,0,0>, r=1
 pos=<4,0,0>, r=3
@@ -3131,7 +3131,7 @@ pos=<1,3,1>, r=1
 """
 
 # %%
-s2 = """
+s2 = """\
 pos=<10,12,12>, r=2
 pos=<12,14,12>, r=2
 pos=<16,12,12>, r=4
@@ -3144,7 +3144,7 @@ pos=<10,10,10>, r=5
 # %%
 def day23a(s, *, part2=False):
   positions0, radii0 = [], []
-  for line in s.strip('\n').split('\n'):
+  for line in s.splitlines():
     pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
     x, y, z, r = map(int, hh.re_groups(pattern, line))
     positions0.append((x, y, z))
@@ -3278,7 +3278,7 @@ def day23b(s, *, part2=False):
   # https://github.com/wimglenn/advent-of-code-wim/blob/master/aoc_wim/aoc2018/q23.py.
   pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
   data: Any = np.array([list(map(int, hh.re_groups(pattern, line)))
-                        for line in s.strip('\n').split('\n')])
+                        for line in s.splitlines()])
   xs, rs = data[:, :3], data[:, 3]
   i = rs.argmax()
   if not part2:
@@ -3329,7 +3329,7 @@ def day23(s, *, part2=False):
   # Improved to be robust (not assuming cubes with power-of-two dimensions).
   pattern = r'^pos=<([0-9-]+),([0-9-]+),([0-9-]+)>, r=(\d+)$'
   data: Any = np.array([list(map(int, hh.re_groups(pattern, line)))
-                        for line in s.strip('\n').split('\n')])
+                        for line in s.splitlines()])
   xs, rs = data[:, :-1], data[:, -1]
   if not part2:
     i = rs.argmax()
@@ -3371,7 +3371,7 @@ puzzle.verify(2, day23_part2)  # ~60 ms.
 puzzle = advent.puzzle(day=24)
 
 # %%
-s1 = """
+s1 = """\
 Immune System:
 17 units each with 5390 hit points (weak to radiation, bludgeoning) with an attack that does 4507 fire damage at initiative 2
 989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
@@ -3428,12 +3428,12 @@ def day24(s, *, verbose=False, boost=0, immune_must_win=False):
     groups: list[Group]
 
     def __init__(self, s):
-      lines = s.split('\n')
+      lines = s.splitlines()
       self.name = lines[0][:-1]
       self.groups = [Group(self, i + 1, line)
                      for i, line in enumerate(lines[1:])]
 
-  armies = [Army(s_army) for s_army in s.strip('\n').split('\n\n')]
+  armies = [Army(s_army) for s_army in s.split('\n\n')]
 
   def get_opponent(army):
     return next(army2 for army2 in armies if army2 != army)
@@ -3556,7 +3556,7 @@ puzzle.verify(2, day24_part2)  # ~1300 ms.
 puzzle = advent.puzzle(day=25)
 
 # %%
-s1 = """
+s1 = """\
  0,0,0,0
  3,0,0,0
  0,3,0,0
@@ -3567,7 +3567,7 @@ s1 = """
 12,0,0,0
 """
 
-s2 = """
+s2 = """\
 -1,2,2,0
 0,0,2,-2
 0,0,0,-2
@@ -3580,7 +3580,7 @@ s2 = """
 3,0,0,0
 """
 
-s3 = """
+s3 = """\
 1,-1,0,1
 2,0,-1,0
 3,2,-1,0
@@ -3593,7 +3593,7 @@ s3 = """
 3,2,0,2
 """
 
-s4 = """
+s4 = """\
 1,-1,-1,-2
 -2,-2,0,1
 0,2,1,3
@@ -3609,7 +3609,7 @@ s4 = """
 
 # %%
 def day25a(s):  # Slower version.
-  points = [tuple(map(int, l.split(','))) for l in s.strip('\n').split('\n')]
+  points = [tuple(map(int, l.split(','))) for l in s.splitlines()]
 
   union_find = hh.UnionFind[int]()
   num_edges = 0
@@ -3633,7 +3633,7 @@ puzzle.verify(1, day25a)  # ~740 ms.
 
 # %%
 def day25(s):  # Faster version, using numpy to identify the graph edges.
-  points = np.array([[int(t) for t in l.split(',')] for l in s.strip('\n').split('\n')])
+  points = np.array([[int(t) for t in l.split(',')] for l in s.splitlines()])
   union_find = hh.UnionFind[int]()
   edges = abs(points[None] - points.reshape((-1, 1, 4))).sum(axis=-1) <= 3
   for i, j in np.argwhere(edges):
