@@ -43,7 +43,7 @@
 # !command -v ffmpeg >/dev/null || (apt-get -qq update && apt-get -qq -y install ffmpeg) >/dev/null
 
 # %%
-# !pip install -q advent-of-code-hhoppe hhoppe-tools mediapy numba
+# !pip install -q advent-of-code-hhoppe hhoppe-tools more_itertools mediapy numba
 
 # %%
 from __future__ import annotations
@@ -63,6 +63,7 @@ from typing import Any
 import advent_of_code_hhoppe  # https://github.com/hhoppe/advent-of-code-hhoppe/blob/main/advent_of_code_hhoppe/__init__.py
 import hhoppe_tools as hh  # https://github.com/hhoppe/hhoppe-tools/blob/main/hhoppe_tools/__init__.py
 import mediapy as media
+import more_itertools
 import numpy as np
 import scipy.optimize
 
@@ -344,11 +345,11 @@ def day3(s, *, part2=False, visualize=False):  # Faster with numpy.
     image1 = media.to_rgb(grid * 1.0)
     image2 = image1.copy()
     image2[t: t + h, l: l + w] = 0.9, 0.9, 0.0
-    video = [image1, image2]
+    video: Any = [image1, image2]
     shrink = 2
     if shrink > 1:
       shape = grid.shape[0] // shrink, grid.shape[1] // shrink
-      video = media.resize_video(video, shape)  # type: ignore
+      video = media.resize_video(video, shape)
     media.show_video(video, codec='gif', fps=1)
 
   return claim
@@ -703,8 +704,7 @@ def day7(s, *, part2=False, num_workers=5, cost_base=60):
       break
     for worker in range(num_workers):
       if not worker_node[worker]:
-        node = get_next_node()
-        if node:
+        if node := get_next_node():
           worker_node[worker] = node
           worker_time[worker] = cost_base + 1 + ord(node) - ord('A')
     time += 1
@@ -961,7 +961,7 @@ position=<-3,  6> velocity=< 2, -1>
 # "Support for 10-pixel-tall characters (2018 Day 10) is coming soon."
 if 0:  # https://pypi.org/project/advent-of-code-ocr/
   hh.run('!pip -q install advent-of-code-ocr')
-  import advent_of_code_ocr  # pylint: disable=unused-import # noqa
+  # import advent_of_code_ocr
 
 
 # %%
@@ -1178,7 +1178,7 @@ def day12(s, *, part2=False, visualize=False):
   for index in range(10**8 if part2 else 20):
     # Grown the domain by two extra '.' on both sides.
     state = '....' + state + '....'
-    state = ''.join(rules[''.join(w)] for w in hh.sliding_window(state, 5))
+    state = ''.join(rules[''.join(w)] for w in more_itertools.sliding_window(state, 5))
     states.append(state)
     if part2 and len(states) >= 2:
       if any(states[-2] == states[-1][2 + shift: 2 + shift + len(states[-2])]
@@ -1264,7 +1264,7 @@ def day13(s, *, part2=False, verbose=False, visualize=False):
   for ch in '<>v^':
     for yx in zip(*np.nonzero(grid == ch)):
       grid[yx] = {'<': '-', '>': '-', 'v': '|', '^': '|'}[ch]
-      carts.append(Cart(yx, ch))  # type: ignore
+      carts.append(Cart(yx, ch))  # type: ignore[arg-type]
 
   def text_from_grid():
     grid2 = grid.copy()
@@ -1308,7 +1308,8 @@ def day13(s, *, part2=False, verbose=False, visualize=False):
             images = [images[0]] * 20 + images + [images[-1]] * 40
             media.show_video(images, codec='gif', fps=20)
             return None
-          print(f'first collision at iteration={iteration}')
+          if 0:
+            print(f'first collision at {iteration=}')
           return f'{new_yx[1]},{new_yx[0]}'
         for crashed_cart in [cart, cart2]:
           crashed_cart.yx = -1, -1
@@ -1330,7 +1331,8 @@ def day13(s, *, part2=False, verbose=False, visualize=False):
       cart.yx = new_yx
     carts = [cart for cart in carts if cart.yx[0] != -1]
     if part2 and len(carts) == 1:
-      print(f'Only one cart left at iteration={iteration}')
+      if 0:
+        print(f'Only one cart left at {iteration=}')
       return f'{carts[0].yx[1]},{carts[0].yx[0]}'
 
 
@@ -2066,10 +2068,9 @@ day15_part1(puzzle.input, visualize=True)  # ~600 ms.
 # %%
 def day15a_part2(s):  # Brute-force search of increasing attack power.
   for elf_attack_power in itertools.count(3):
-    result = day15_part1(
-        s, elf_attack_power=elf_attack_power, fail_if_elf_dies=True)
-    if result:
-      print(f'Found solution at elf_attack_power={elf_attack_power}')
+    if result := day15_part1(s, elf_attack_power=elf_attack_power, fail_if_elf_dies=True):
+      if 0:
+        print(f'Found solution at {elf_attack_power=}')
       return result
 
 check_eq(day15a_part2(s1), 4988)
@@ -2105,10 +2106,10 @@ def day15_part2(s, *, visualize=False):  # Faster bisection search.
       else:
         current = current + 1
         break
-  print(f'Found solution at elf_attack_power={current}')
+  if 0:
+    print(f'Found solution at elf_attack_power={current}')
   if visualize:
-    day15_part1(
-        s, elf_attack_power=current, fail_if_elf_dies=True, visualize=True)
+    day15_part1(s, elf_attack_power=current, fail_if_elf_dies=True, visualize=True)
   return results[current]
 
 check_eq(day15_part2(s1), 4988)
@@ -2179,7 +2180,8 @@ def day16(s, *, part2=False):
     operation_from_opcode[opcode] = operation
     for set_ in candidates.values():
       set_ -= {opcode}
-  print(operation_from_opcode)
+  if 0:
+    print(operation_from_opcode)
 
   machine = Machine(num_registers=4)
   for line in s2.splitlines():
@@ -2285,7 +2287,7 @@ def day17(s, *, part2=False, visualize=False):
   if visualize:
     cmap = {'.': (250,) * 3, '#': (0, 0, 0),
             '~': (0, 0, 255), '|': (150, 150, 255)}
-    image = hh.image_from_yx_map(grid, '.', cmap, pad=1).transpose(1, 0, 2)
+    image = hh.image_from_yx_map(grid, '.', cmap=cmap, pad=1).transpose(1, 0, 2)
     media.show_image(image, title='(transposed)', border=True)
     return None
 
@@ -2382,7 +2384,7 @@ def day18(s, *, num_minutes=10, part2=False, visualize=False):
     assert period > 0
     videos = {
         'Start': [images[0]] * 20 + images[:50] + [images[49]] * 10,
-        f'Cycling period={period}': images[-period:],
+        f'Cycling {period=}': images[-period:],
     }
     media.show_videos(videos, codec='gif', fps=10)
     return None
@@ -2582,8 +2584,7 @@ def day20(s, *, part2=False, visualize=False):
   def traverse(l):  # Returns three sets: doors_s, doors_e, yxs.
     if not l:
       return set(), set(), set()
-    half = len(l) // 2
-    if half:
+    if half := len(l) // 2:
       doors_s1, doors_e1, yxs1 = traverse(l[:half])
       doors_s2, doors_e2, yxs2 = traverse(l[half:])
       return (doors_s1 | {(y + v, x + u) for y, x in yxs1 for v, u in doors_s2},
@@ -2620,8 +2621,7 @@ def day20(s, *, part2=False, visualize=False):
       map1 = {(y * 2 + 1, x * 2): '-' for y, x in doors_s}
       map2 = {(y * 2, x * 2 + 1): '|' for y, x in doors_e}
       return {**map1, **map2, (0, 0): 'X'}
-    print(hh.string_from_grid(hh.grid_from_indices(
-        symbols_from_doors(), background='.')))
+    print(hh.string_from_grid(hh.grid_from_indices(symbols_from_doors(), background='.')))
 
   yx = 0, 0
   distances = {yx: 0}
@@ -2648,7 +2648,7 @@ def day20(s, *, part2=False, visualize=False):
         if distance >= 1000:
           map1[y * 2, x * 2] = 3
     cmap = {0: (0,) * 3, 1: (250,) * 3, 2: (255, 0, 0), 3: (160, 140, 255)}
-    image = hh.image_from_yx_map(map1, 0, cmap, pad=2)
+    image = hh.image_from_yx_map(map1, 0, cmap=cmap, pad=2)
     image = image.repeat(2, axis=0).repeat(2, axis=1)
     media.show_image(image, border=True, height=max(60, image.shape[0]))
 
@@ -2821,8 +2821,7 @@ def day21_test():
 
   def sweep(max_a, max_count):
     for a in range(max_a):
-      count = count_for(a, max_count=max_count)
-      if count:
+      if count := count_for(a, max_count=max_count):
         hh.show(a, count)
 
   if 0:
@@ -2890,7 +2889,8 @@ def day21(s, *, part2=False):
   results: dict[int, int] = {}
   for a in gen_sequence():
     if a in results:
-      print(f'Found {len(results)} numbers before first repetition.')
+      if 0:
+        print(f'Found {len(results)} numbers before first repetition.')
       return list(results)[-1]  # Last number before first repetition.
     results[a] = 1
 
@@ -3255,8 +3255,9 @@ def day23a(s, *, part2=False):
           min_distance = min(min_distance, distance)
           best_position = position
     distance_from_good = abs(np.array(best_position) - good_position).sum()
-    hh.show(best_position, min_distance, distance_from_good, num_in_range(best_position))
-    # best_position = (26794906, 46607439, 21078785), min_distance = 94481130, distance_from_good = 16510673, num_in_range(best_position) = 977
+    if 0:
+      hh.show(best_position, min_distance, distance_from_good, num_in_range(best_position))
+      # best_position = (26794906, 46607439, 21078785), min_distance = 94481130, distance_from_good = 16510673, num_in_range(best_position) = 977
     if distance_from_good <= distance_threshold:
       break
     good_position = best_position
@@ -3420,7 +3421,7 @@ def day24(s, *, verbose=False, boost=0, immune_must_win=False):
       return self.units * self.attack_damage
 
     def selection_order(self):
-      return (-self.effective_power(), -self.initiative)
+      return -self.effective_power(), -self.initiative
 
   @dataclasses.dataclass
   class Army:
@@ -3526,15 +3527,15 @@ def day24_part2(s):
       check_eq(func(upper) is not None, True)
     while lower + 1 < upper:
       mid = (lower + upper) // 2
-      value = func(mid)
-      if value:
+      if func(mid):
         upper = mid
       else:
         lower = mid
     return upper
 
   boost = binary_search(boost_result, lower=0, upper=2_000)
-  print(f'Found solution with boost={boost}')
+  if 0:
+    print(f'Found solution with {boost=}')
   return boost_result(boost)
 
 
@@ -3620,7 +3621,8 @@ def day25a(s):  # Slower version.
         num_edges += 1
         union_find.union(i, j)
 
-  print(f'Graph has {len(points)} vertices and {num_edges} edges.')
+  if 0:
+    print(f'Graph has {len(points)} vertices and {num_edges} edges.')
   cluster_reps = {union_find.find(i) for i in range(len(points))}
   return len(cluster_reps)
 
