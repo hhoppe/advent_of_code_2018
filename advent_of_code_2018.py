@@ -406,7 +406,7 @@ def day4(s, *, part2=False):
   lines = sorted(lines)
   num_dates = sum('Guard' in line for line in lines)
   asleep = np.zeros((num_dates, 60))
-  date_guard = np.empty(num_dates, dtype=int)
+  date_guard = np.empty(num_dates, int)
   row = -1
   for line in lines:
     minute, = map(int, hh.re_groups(r' \d\d:(\d\d)', line))
@@ -549,7 +549,7 @@ def day5(s, *, part2=False):  # Fastest; nested loops in numba.
     return min_length
 
   # Convert string to list of codes, each in 0..25 or 32..57 .
-  codes = np.array([ord(ch) - ord('A') for ch in s.strip()], dtype=np.int32)
+  codes = np.array([ord(ch) - ord('A') for ch in s.strip()], np.int32)
   if not part2:
     return length_of_simplified_polymer(codes)
 
@@ -595,7 +595,7 @@ def day6(s, *, part2=False, max_sum=10_000, visualize=False):
   shape = np.max(yxs, axis=0) + 1
 
   def manhattan_from(yx):
-    indices = np.indices(shape, dtype=np.int32)
+    indices = np.indices(shape, np.int32)
     return abs(indices[0] - yx[0]) + abs(indices[1] - yx[1])
 
   all_manhattans = np.array([manhattan_from(yx) for yx in yxs])
@@ -873,7 +873,7 @@ def day9(s, *, part2=False):  # Fastest.  Singly-linked list is sufficient!
   def func(num_players, last_marble):
     scores = [0] * num_players
     # "array[marble1] == marble2" indicates that marble2 is next after marble1.
-    array = np.empty(last_marble + 23, dtype=np.int32)
+    array = np.empty(last_marble + 23, np.int32)
     array[0] = 1
     array[1] = 0
     marble = 2
@@ -1085,7 +1085,7 @@ def day11(s, *, part2=False, visualize=False):
   def get_yx_largest(size):
     if 0:  # Slower.
       import scipy.signal
-      box = np.full((size, size), 1, dtype=np.int32)
+      box = np.full((size, size), 1, np.int32)
       result = scipy.signal.convolve2d(power, box, mode='valid')
     else:
       result = (integral[size:, size:] - integral[size:, :-size] -
@@ -1277,8 +1277,7 @@ def day13(s, *, part2=False, verbose=False, visualize=False):
   if visualize:
     cmap = {' ': (250,) * 3, '+': (140, 140, 140),
             **{ch: (180,) * 3 for ch in r'|-\/'}}
-    image0 = np.array(
-      [cmap[e] for e in grid.flat], dtype=np.uint8).reshape(*grid.shape, 3)
+    image0 = np.array([cmap[e] for e in grid.flat], np.uint8).reshape(*grid.shape, 3)
 
   images = []
   for iteration in itertools.count():
@@ -1389,7 +1388,7 @@ def day14_part1(s):  # Fast using numba.
 
   @numba_njit(cache=True)
   def func(num_recipes):
-    recipes = np.full(num_recipes + 11, 1, dtype=np.uint8)
+    recipes = np.full(num_recipes + 11, 1, np.uint8)
     num = 2
     recipes[0] = 3
     recipes[1] = 7
@@ -1443,13 +1442,13 @@ check_eq(day14a_part2('59414'), 2018)
 
 # %%
 def day14b_part2(s):  # Fast using numba.
-  pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
+  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
 
   @numba_njit(cache=True)
   def func(pattern):
     len_pattern = len(pattern)
     max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, dtype=np.uint8)
+    recipes = np.empty(max_recipes, np.uint8)
     num = 2
     recipes[0] = 3
     recipes[1] = 7
@@ -1497,12 +1496,12 @@ puzzle.verify(2, day14b_part2)  # ~360 ms.
 
 # %%
 def day14c_part2(s):  # Faster by generating batches.
-  pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
+  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
 
   @numba_njit(cache=True)
   def func(pattern):
     max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, dtype=np.uint8)
+    recipes = np.empty(max_recipes, np.uint8)
     num = 2
     recipes[0] = 3
     recipes[1] = 7
@@ -1554,7 +1553,7 @@ puzzle.verify(2, day14c_part2)  # ~190 ms.
 
 # %%
 def day14d_part2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
-  pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
+  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
 
   @numba_njit(cache=True)
   def func(pattern):
@@ -1563,7 +1562,7 @@ def day14d_part2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subs
     # https://www.py4u.net/discuss/12693.
     def kmp_offsets(subseq):
       m = len(subseq)
-      offsets = np.zeros(m, dtype=np.int64)
+      offsets = np.zeros(m, np.int64)
       j = 1
       k = 0
       while j < m:
@@ -1580,7 +1579,7 @@ def day14d_part2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subs
       return offsets
 
     max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, dtype=np.uint8)
+    recipes = np.empty(max_recipes, np.uint8)
     num = 2
     recipes[0] = 3
     recipes[1] = 7
@@ -1640,7 +1639,7 @@ puzzle.verify(2, day14d_part2)  # ~250 ms is slower than naive algorithm.
 
 # %%
 def day14_part2(s):  # Fastest, using Boyer-Moore-Horspool subsequence search.
-  pattern = np.array([int(ch) for ch in s.strip()], dtype=np.uint8)
+  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
 
   @numba_njit(cache=True)
   def func(pattern):
@@ -1654,7 +1653,7 @@ def day14_part2(s):  # Fastest, using Boyer-Moore-Horspool subsequence search.
       return table
 
     max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, dtype=np.uint8)
+    recipes = np.empty(max_recipes, np.uint8)
     num = 2
     recipes[0] = 3
     recipes[1] = 7
@@ -1997,7 +1996,7 @@ def day15_part1(s, visualize=False, elf_attack_power=3,
     if visualize:
       cmap = {'.': (250,) * 3, '#': (0, 0, 0),
               'E': (255, 0, 0), 'G': (0, 190, 0)}
-      image = np.array([cmap[e] for e in grid.ravel()], dtype=np.uint8)
+      image = np.array([cmap[e] for e in grid.ravel()], np.uint8)
       image = image.reshape(*grid.shape, 3)
       image = image.repeat(5, axis=0).repeat(5, axis=1)
       images.append(image)
@@ -2087,8 +2086,7 @@ def day15_part2(s, *, visualize=False):  # Faster bisection search.
   low = high = None
   results = {}
   while True:
-    results[current] = result = day15_part1(
-        s, elf_attack_power=current, fail_if_elf_dies=True)
+    results[current] = result = day15_part1(s, elf_attack_power=current, fail_if_elf_dies=True)
     if result:  # We should try to decrease current.
       high = current
       if low is None:
@@ -2365,7 +2363,7 @@ def day18(s, *, num_minutes=10, part2=False, visualize=False):
   for minute in itertools.count():
     if visualize:
       cmap = {'.': (200, 0, 0), '|': (0, 200, 0), '#': (0, 0, 200)}
-      image = np.array([cmap[e] for e in grid.ravel()], dtype=np.uint8)
+      image = np.array([cmap[e] for e in grid.ravel()], np.uint8)
       image = image.reshape(*grid.shape, 3).repeat(3, axis=0).repeat(3, axis=1)
       images.append(image)
     config = grid.tobytes()  # Hashable; ''.join(grid.flat) is slower.
@@ -3013,7 +3011,7 @@ def day22(s, *, part2=False, pad=60, visualize=False):  # With numba.
   target_yx = tuple(map(int, hh.re_groups(r'^target: (\d+),(\d+)$', lines[1])))[::-1]
 
   def construct_grid(shape):
-    erosion_level = np.empty(shape, dtype=np.int64)
+    erosion_level = np.empty(shape, np.int64)
     for y, x in np.ndindex(shape):
       if y == 0:
         geologic_index = x * 16807
@@ -3085,7 +3083,7 @@ def day22(s, *, part2=False, pad=60, visualize=False):  # With numba.
   distance, path = dijkstra(grid, target_yx, visualize)
   if visualize:
     cmap = {0: (150, 0, 0), 1: (0, 150, 0), 2: (0, 0, 150)}
-    image = np.array([cmap[e] for e in grid.ravel()], dtype=np.uint8)
+    image = np.array([cmap[e] for e in grid.ravel()], np.uint8)
     image = image.reshape(*grid.shape, 3)
     image2 = image.copy()
     for node in path:
@@ -3240,7 +3238,7 @@ def day23a(s, *, part2=False):
     # for c in set(itertools.product([-1, 0, 1], repeat=3)) - {0, 0, 0}:
     # for c in hvalues:
     for c in [-np.sign(good_position)]:
-      c = np.array(c, dtype=np.float64)
+      c = np.array(c, np.float64)
       matrix_ub = np.array(hvalues)
       b_ub = np.nan_to_num(best_polytope, posinf=10**10)
       res = scipy.optimize.linprog(c, matrix_ub, b_ub, method='highs')
