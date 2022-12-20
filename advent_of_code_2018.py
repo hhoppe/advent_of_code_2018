@@ -57,7 +57,9 @@ import importlib
 import itertools
 import math
 import re
+import sys
 import textwrap
+import types
 from typing import Any
 
 import advent_of_code_hhoppe  # https://github.com/hhoppe/advent-of-code-hhoppe/blob/main/advent_of_code_hhoppe/__init__.py
@@ -99,10 +101,11 @@ if 0:
 # %%
 try:
   import numba
-  numba_njit = numba.njit
 except ModuleNotFoundError:
   print('Package numba is unavailable.')
-  numba_njit = hh.noop_decorator
+  numba = sys.modules['numba'] = types.ModuleType('numba')
+  numba.njit = hh.noop_decorator
+using_numba = hasattr(numba, 'jit')
 
 # %%
 advent = advent_of_code_hhoppe.Advent(year=YEAR, input_url=INPUT_URL, answer_url=ANSWER_URL)
@@ -488,26 +491,29 @@ check_eq(day5a_part2('dabAcCaCBAcCcaDA'), 4)
 # puzzle.verify(2, day5a_part2)  # ~80 s.
 
 # %%
-def day5b(s, *, part2=False):  # Faster, using stack and numba.
+# Faster, using stack and numba.
 
-  @numba_njit(cache=True)
-  def simplify_polymer(s):
-    l: list[str] = []
-    for ch in s:
-      if l and abs(ord(ch) - ord(l[-1])) == 32:
-        l.pop()
-      else:
-        l.append(ch)
-    return ''.join(l)
+@numba.njit
+def day5b_simplify_polymer(s):
+  l: list[str] = []
+  for ch in s:
+    if l and abs(ord(ch) - ord(l[-1])) == 32:
+      l.pop()
+    else:
+      l.append(ch)
+  return ''.join(l)
+
+
+def day5b(s, *, part2=False):
 
   def remove_elem(s, i):
     return s.replace(chr(ord('A') + i), '').replace(chr(ord('a') + i), '')
 
   s = s.strip()
   if not part2:
-    return len(simplify_polymer(s))
+    return len(day5b_simplify_polymer(s))
 
-  return min(len(simplify_polymer(remove_elem(s, i))) for i in range(26))
+  return min(len(day5b_simplify_polymer(remove_elem(s, i))) for i in range(26))
 
 
 check_eq(day5b('dabAcCaCBAcCcaDA'), 10)  # ~700 ms for numba compilation.
@@ -519,38 +525,41 @@ puzzle.verify(2, day5b_part2)  # ~260 ms with numba (~440 ms without numba)
 
 
 # %%
-def day5(s, *, part2=False):  # Fastest; nested loops in numba.
+# Fastest; nested loops in numba.
 
-  @numba_njit(cache=True)
-  def length_of_simplified_polymer(codes):
+@numba.njit
+def day5_length_of_simplified_polymer(codes):
+  l: list[int] = []
+  for code in codes:
+    if l and abs(code - l[-1]) == 32:
+      l.pop()
+    else:
+      l.append(code)
+  return len(l)
+
+
+@numba.njit
+def day5_min_length_after_removing_any_one_letter_pair(codes):
+  min_length = 10**8
+  for omit in range(26):
     l: list[int] = []
     for code in codes:
-      if l and abs(code - l[-1]) == 32:
-        l.pop()
-      else:
-        l.append(code)
-    return len(l)
+      if code not in (omit, omit + 32):
+        if l and abs(code - l[-1]) == 32:
+          l.pop()
+        else:
+          l.append(code)
+    min_length = min(min_length, len(l))
+  return min_length
 
-  @numba_njit(cache=True)
-  def min_length_after_removing_any_one_letter_pair(codes):
-    min_length = 10**8
-    for omit in range(26):
-      l: list[int] = []
-      for code in codes:
-        if code not in (omit, omit + 32):
-          if l and abs(code - l[-1]) == 32:
-            l.pop()
-          else:
-            l.append(code)
-      min_length = min(min_length, len(l))
-    return min_length
 
+def day5(s, *, part2=False):
   # Convert string to list of codes, each in 0..25 or 32..57 .
   codes = np.array([ord(ch) - ord('A') for ch in s.strip()], np.int32)
   if not part2:
-    return length_of_simplified_polymer(codes)
+    return day5_length_of_simplified_polymer(codes)
 
-  return min_length_after_removing_any_one_letter_pair(codes)
+  return day5_min_length_after_removing_any_one_letter_pair(codes)
 
 
 check_eq(day5('dabAcCaCBAcCcaDA'), 10)
@@ -860,41 +869,43 @@ day9b_part2 = functools.partial(day9b, part2=True)
 # puzzle.verify(2, day9b_part2)  # ~1800 ms.
 
 # %%
-def day9(s, *, part2=False):  # Fastest.  Singly-linked list is sufficient!
+# Fastest.  Singly-linked list is sufficient!
+
+@numba.njit
+def day9_func(num_players: int, last_marble: int) -> int:
+  scores = [0] * num_players
+  # "array[marble1] == marble2" indicates that marble2 is next after marble1.
+  array = np.empty(last_marble + 23, np.int32)
+  array[0] = 1
+  array[1] = 0
+  marble = 2
+
+  while True:
+    for marble in range(marble, marble + 21):  # e.g., [2, ..., 22]
+      marble1 = array[marble - 1]
+      marble2 = array[marble1]
+      array[marble1] = marble
+      array[marble] = marble2
+    marble += 1  # e.g., 23
+    popped = array[marble - 5]  # e.g., 9 = next(18)
+    if marble > last_marble:
+      break
+    scores[marble % num_players] += marble + popped
+    array[marble - 5] = marble - 4  # Remove popped.
+    next19 = array[marble - 4]
+    array[marble + 1] = array[next19]  # e.g., next(24) = next(next(19))
+    array[next19] = marble + 1  # e.g., next(next(19)) = 24
+    marble += 2  # e.g., 25 == 2 (mod 23)
+
+  return max(scores)
+
+
+def day9(s, *, part2=False):
   pattern = r'^(\d+) players; last marble is worth (\d+) points$'
   num_players, last_marble = map(int, hh.re_groups(pattern, s.strip()))
   if part2:
     last_marble *= 100
-
-  @numba_njit(cache=True)
-  def func(num_players, last_marble):
-    scores = [0] * num_players
-    # "array[marble1] == marble2" indicates that marble2 is next after marble1.
-    array = np.empty(last_marble + 23, np.int32)
-    array[0] = 1
-    array[1] = 0
-    marble = 2
-
-    while True:
-      for marble in range(marble, marble + 21):  # e.g., [2, ..., 22]
-        marble1 = array[marble - 1]
-        marble2 = array[marble1]
-        array[marble1] = marble
-        array[marble] = marble2
-      marble += 1  # e.g., 23
-      popped = array[marble - 5]  # e.g., 9 = next(18)
-      if marble > last_marble:
-        break
-      scores[marble % num_players] += marble + popped
-      array[marble - 5] = marble - 4  # Remove popped.
-      next19 = array[marble - 4]
-      array[marble + 1] = array[next19]  # e.g., next(24) = next(next(19))
-      array[next19] = marble + 1  # e.g., next(next(19)) = 24
-      marble += 2  # e.g., 25 == 2 (mod 23)
-
-    return max(scores)
-
-  return func(num_players, last_marble)
+  return day9_func(num_players, last_marble)
 
 
 check_eq(day9('10 players; last marble is worth 1618 points'), 8317)
@@ -905,6 +916,7 @@ check_eq(day9('30 players; last marble is worth 5807 points'), 37305)
 puzzle.verify(1, day9)  # ~6 ms  (~50 ms without numba)
 
 day9_part2 = functools.partial(day9, part2=True)
+_ = day9_part2(puzzle.input)  # For numba jit.
 puzzle.verify(2, day9_part2)  # ~38 ms (~5100 ms without numba)
 
 # %% [markdown]
@@ -1380,34 +1392,36 @@ puzzle.verify(1, day14a_part1)  # ~820 ms.
 
 
 # %%
-def day14_part1(s):  # Fast using numba.
+# Fast Part 1 using numba.
+
+@numba.njit
+def day14_part1_func(num_recipes: int) -> np.ndarray:
+  recipes = np.full(num_recipes + 11, 1, np.uint8)
+  num = 2
+  recipes[0] = 3
+  recipes[1] = 7
+  index0, index1 = 0, 1
+  while num < num_recipes + 10:
+    current0, current1 = recipes[index0], recipes[index1]
+    total = current0 + current1
+    if total >= 10:
+      recipes[num + 1] = total - 10
+      num += 2
+    else:
+      recipes[num] = total
+      num += 1
+    index0 += 1 + current0
+    if index0 >= num:
+      index0 %= num
+    index1 += 1 + current1
+    if index1 >= num:
+      index1 %= num
+  return recipes[num_recipes:num_recipes + 10]
+
+
+def day14_part1(s):
   num_recipes = int(s)
-
-  @numba_njit(cache=True)
-  def func(num_recipes):
-    recipes = np.full(num_recipes + 11, 1, np.uint8)
-    num = 2
-    recipes[0] = 3
-    recipes[1] = 7
-    index0, index1 = 0, 1
-    while num < num_recipes + 10:
-      current0, current1 = recipes[index0], recipes[index1]
-      total = current0 + current1
-      if total >= 10:
-        recipes[num + 1] = total - 10
-        num += 2
-      else:
-        recipes[num] = total
-        num += 1
-      index0 += 1 + current0
-      if index0 >= num:
-        index0 %= num
-      index1 += 1 + current1
-      if index1 >= num:
-        index1 %= num
-    return recipes[num_recipes:num_recipes + 10]
-
-  return ''.join(map(str, func(num_recipes)))
+  return ''.join(map(str, day14_part1_func(num_recipes)))
 
 
 check_eq(day14_part1('9'), '5158916779')
@@ -1438,50 +1452,52 @@ check_eq(day14a_part2('59414'), 2018)
 # puzzle.verify(2, day14a_part2)  # ~30 s.
 
 # %%
-def day14b_part2(s):  # Fast using numba.
-  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+# Fast Part 2 using numba.
 
-  @numba_njit(cache=True)
-  def func(pattern):
-    len_pattern = len(pattern)
-    max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, np.uint8)
-    num = 2
-    recipes[0] = 3
-    recipes[1] = 7
-    index0, index1 = 0, 1
+@numba.njit
+def day14b_part2_func(pattern):
+  len_pattern = len(pattern)
+  max_recipes = 100_000_000
+  recipes = np.empty(max_recipes, np.uint8)
+  num = 2
+  recipes[0] = 3
+  recipes[1] = 7
+  index0, index1 = 0, 1
 
-    def matches():
-      if num < len_pattern:
+  def matches():
+    if num < len_pattern:
+      return False
+    for i in range(len_pattern):
+      if recipes[num - len_pattern + i] != pattern[i]:
         return False
-      for i in range(len_pattern):
-        if recipes[num - len_pattern + i] != pattern[i]:
-          return False
-      return True
+    return True
 
-    while True:
-      assert num + 2 < max_recipes
-      current0, current1 = recipes[index0], recipes[index1]
-      total = current0 + current1
-      if total >= 10:
-        recipes[num] = 1
-        num += 1
-        if matches():
-          break
-        recipes[num] = total - 10
-        num += 1
-        if matches():
-          break
-      else:
-        recipes[num] = total
-        num += 1
-        if matches():
-          break
-      index0 = (index0 + 1 + current0) % num
-      index1 = (index1 + 1 + current1) % num
-    return num - len_pattern
+  while True:
+    assert num + 2 < max_recipes
+    current0, current1 = recipes[index0], recipes[index1]
+    total = current0 + current1
+    if total >= 10:
+      recipes[num] = 1
+      num += 1
+      if matches():
+        break
+      recipes[num] = total - 10
+      num += 1
+      if matches():
+        break
+    else:
+      recipes[num] = total
+      num += 1
+      if matches():
+        break
+    index0 = (index0 + 1 + current0) % num
+    index1 = (index1 + 1 + current1) % num
+  return num - len_pattern
 
-  return func(pattern)
+
+def day14b_part2(s):
+  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+  return day14b_part2_func(pattern)
 
 
 check_eq(day14b_part2('51589'), 9)
@@ -1492,53 +1508,55 @@ puzzle.verify(2, day14b_part2)  # ~360 ms.
 
 
 # %%
-def day14c_part2(s):  # Faster by generating batches.
+# Faster by generating batches.
+
+@numba.njit
+def day14c_part2_func(pattern: np.ndarray) -> int:
+  max_recipes = 100_000_000
+  recipes = np.empty(max_recipes, np.uint8)
+  num = 2
+  recipes[0] = 3
+  recipes[1] = 7
+  index0, index1 = 0, 1
+  batch_size = 1000
+
+  while True:
+    assert num + batch_size * 2 < max_recipes
+    prev_num = max(num - len(pattern) + 1, 0)
+
+    # Generate batch.
+    for _ in range(batch_size):
+      current0, current1 = recipes[index0], recipes[index1]
+      total = current0 + current1
+      if total >= 10:
+        recipes[num] = 1
+        recipes[num + 1] = total - 10
+        num += 2
+      else:
+        recipes[num] = total
+        num += 1
+      index0 += 1 + current0
+      if index0 >= num:
+        index0 %= num
+      index1 += 1 + current1
+      if index1 >= num:
+        index1 %= num
+
+    # Find pattern in new batch results.
+    sequence = recipes[prev_num:num]
+    n = len(sequence)
+    m = len(pattern)
+    for i in range(n - m + 1):
+      for j in range(m):
+        if sequence[i + j] != pattern[j]:
+          break
+      else:
+        return prev_num + i
+
+
+def day14c_part2(s):
   pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
-
-  @numba_njit(cache=True)
-  def func(pattern):
-    max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, np.uint8)
-    num = 2
-    recipes[0] = 3
-    recipes[1] = 7
-    index0, index1 = 0, 1
-    batch_size = 1000
-
-    while True:
-      assert num + batch_size * 2 < max_recipes
-      prev_num = max(num - len(pattern) + 1, 0)
-
-      # Generate batch.
-      for _ in range(batch_size):
-        current0, current1 = recipes[index0], recipes[index1]
-        total = current0 + current1
-        if total >= 10:
-          recipes[num] = 1
-          recipes[num + 1] = total - 10
-          num += 2
-        else:
-          recipes[num] = total
-          num += 1
-        index0 += 1 + current0
-        if index0 >= num:
-          index0 %= num
-        index1 += 1 + current1
-        if index1 >= num:
-          index1 %= num
-
-      # Find pattern in new batch results.
-      sequence = recipes[prev_num:num]
-      n = len(sequence)
-      m = len(pattern)
-      for i in range(n - m + 1):
-        for j in range(m):
-          if sequence[i + j] != pattern[j]:
-            break
-        else:
-          return prev_num + i
-
-  return func(pattern)
+  return day14c_part2_func(pattern)
 
 
 check_eq(day14c_part2('51589'), 9)
@@ -1549,82 +1567,83 @@ puzzle.verify(2, day14c_part2)  # ~190 ms.
 
 
 # %%
-def day14d_part2(s):  # Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
-  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+# Try using Knuth-Morris-Pratt (KMP); not a win for 6-subseq.
 
-  @numba_njit(cache=True)
-  def func(pattern):
-
-    # Precompute offsets for Knuth-Morris-Pratt (KMP) subsequence search; see
-    # https://www.py4u.net/discuss/12693.
-    def kmp_offsets(subseq):
-      m = len(subseq)
-      offsets = np.zeros(m, np.int64)
-      j = 1
-      k = 0
-      while j < m:
-        if subseq[j] == subseq[k]:
-          k += 1
-          offsets[j] = k
+@numba.njit
+def day14d_part2_func(pattern: np.ndarray) -> int:
+  # Precompute offsets for Knuth-Morris-Pratt (KMP) subsequence search; see
+  # https://www.py4u.net/discuss/12693.
+  def kmp_offsets(subseq):
+    m = len(subseq)
+    offsets = np.zeros(m, np.int64)
+    j = 1
+    k = 0
+    while j < m:
+      if subseq[j] == subseq[k]:
+        k += 1
+        offsets[j] = k
+        j += 1
+      else:
+        if k != 0:
+          k = offsets[k - 1]
+        else:
+          offsets[j] = 0
           j += 1
+    return offsets
+
+  max_recipes = 100_000_000
+  recipes = np.empty(max_recipes, np.uint8)
+  num = 2
+  recipes[0] = 3
+  recipes[1] = 7
+  index0, index1 = 0, 1
+  batch_size = 1000
+  offsets = kmp_offsets(pattern)
+
+  while True:
+    assert num + batch_size * 2 < max_recipes
+    prev_num = max(num - len(pattern) + 1, 0)
+
+    # Generate batch.
+    for _ in range(batch_size):
+      current0, current1 = recipes[index0], recipes[index1]
+      total = current0 + current1
+      if total >= 10:
+        recipes[num] = 1
+        recipes[num + 1] = total - 10
+        num += 2
+      else:
+        recipes[num] = total
+        num += 1
+      index0 += 1 + current0
+      if index0 >= num:
+        index0 %= num
+      index1 += 1 + current1
+      if index1 >= num:
+        index1 %= num
+
+    # Find pattern in new batch results using KMP.
+    seq = recipes[prev_num:num]
+    subseq = pattern
+    m = len(subseq)
+    n = len(seq)
+    i = j = 0
+    while i < n:
+      if seq[i] == subseq[j]:
+        i += 1
+        j += 1
+      if j == m:
+        return prev_num + (i - j)
+      if i < n and seq[i] != subseq[j]:
+        if j != 0:
+          j = offsets[j - 1]
         else:
-          if k != 0:
-            k = offsets[k - 1]
-          else:
-            offsets[j] = 0
-            j += 1
-      return offsets
-
-    max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, np.uint8)
-    num = 2
-    recipes[0] = 3
-    recipes[1] = 7
-    index0, index1 = 0, 1
-    batch_size = 1000
-    offsets = kmp_offsets(pattern)
-
-    while True:
-      assert num + batch_size * 2 < max_recipes
-      prev_num = max(num - len(pattern) + 1, 0)
-
-      # Generate batch.
-      for _ in range(batch_size):
-        current0, current1 = recipes[index0], recipes[index1]
-        total = current0 + current1
-        if total >= 10:
-          recipes[num] = 1
-          recipes[num + 1] = total - 10
-          num += 2
-        else:
-          recipes[num] = total
-          num += 1
-        index0 += 1 + current0
-        if index0 >= num:
-          index0 %= num
-        index1 += 1 + current1
-        if index1 >= num:
-          index1 %= num
-
-      # Find pattern in new batch results using KMP.
-      seq = recipes[prev_num:num]
-      subseq = pattern
-      m = len(subseq)
-      n = len(seq)
-      i = j = 0
-      while i < n:
-        if seq[i] == subseq[j]:
           i += 1
-          j += 1
-        if j == m:
-          return prev_num + (i - j)
-        if i < n and seq[i] != subseq[j]:
-          if j != 0:
-            j = offsets[j - 1]
-          else:
-            i += 1
 
-  return func(pattern)
+
+def day14d_part2(s):
+  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+  return day14d_part2_func(pattern)
 
 
 check_eq(day14d_part2('51589'), 9)
@@ -1635,70 +1654,72 @@ puzzle.verify(2, day14d_part2)  # ~250 ms is slower than naive algorithm.
 
 
 # %%
-def day14_part2(s):  # Fastest, using Boyer-Moore-Horspool subsequence search.
+# Fastest, using Boyer-Moore-Horspool subsequence search.
+
+@numba.njit
+def day14_part2_func(pattern: np.ndarray) -> int:
+
+  # Precompute skips for Boyer-Moore-Horspool algorithm; see
+  # https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm
+  def boyer_moore_horspool_skip_table(subseq, alphabet_size):
+    table = np.full(alphabet_size, len(subseq))
+    for i in range(len(subseq) - 1):
+      table[subseq[i]] = len(subseq) - 1 - i
+    return table
+
+  max_recipes = 100_000_000
+  recipes = np.empty(max_recipes, np.uint8)
+  num = 2
+  recipes[0] = 3
+  recipes[1] = 7
+  index0, index1 = 0, 1
+  batch_size = 1000
+  skip_table = boyer_moore_horspool_skip_table(pattern, 10)
+
+  while True:
+    assert num + batch_size * 2 < max_recipes
+    prev_num = max(num - len(pattern) + 1, 0)
+
+    # Generate batch.
+    for _ in range(batch_size):
+      current0, current1 = recipes[index0], recipes[index1]
+      total = current0 + current1
+      if total >= 10:
+        recipes[num] = 1
+        recipes[num + 1] = total - 10
+        num += 2
+      else:
+        recipes[num] = total
+        num += 1
+      index0 += 1 + current0
+      if index0 >= num:
+        index0 %= num
+      index1 += 1 + current1
+      if index1 >= num:
+        index1 %= num
+
+    # Find pattern in new batch results using Boyer-Moore-Horspool.
+    seq = recipes[prev_num:num]
+    subseq = pattern
+    m = len(subseq)
+    n = len(seq)
+    i = 0
+    while i + m <= n:
+      j = m - 1
+      e = e_last = seq[i + j]
+      while True:
+        if e != subseq[j]:
+          i += skip_table[e_last]
+          break
+        if j == 0:
+          return prev_num + i
+        j -= 1
+        e = seq[i + j]
+
+
+def day14_part2(s):
   pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
-
-  @numba_njit(cache=True)
-  def func(pattern):
-
-    # Precompute skips for Boyer-Moore-Horspool algorithm; see
-    # https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm
-    def boyer_moore_horspool_skip_table(subseq, alphabet_size):
-      table = np.full(alphabet_size, len(subseq))
-      for i in range(len(subseq) - 1):
-        table[subseq[i]] = len(subseq) - 1 - i
-      return table
-
-    max_recipes = 100_000_000
-    recipes = np.empty(max_recipes, np.uint8)
-    num = 2
-    recipes[0] = 3
-    recipes[1] = 7
-    index0, index1 = 0, 1
-    batch_size = 1000
-    skip_table = boyer_moore_horspool_skip_table(pattern, 10)
-
-    while True:
-      assert num + batch_size * 2 < max_recipes
-      prev_num = max(num - len(pattern) + 1, 0)
-
-      # Generate batch.
-      for _ in range(batch_size):
-        current0, current1 = recipes[index0], recipes[index1]
-        total = current0 + current1
-        if total >= 10:
-          recipes[num] = 1
-          recipes[num + 1] = total - 10
-          num += 2
-        else:
-          recipes[num] = total
-          num += 1
-        index0 += 1 + current0
-        if index0 >= num:
-          index0 %= num
-        index1 += 1 + current1
-        if index1 >= num:
-          index1 %= num
-
-      # Find pattern in new batch results using Boyer-Moore-Horspool.
-      seq = recipes[prev_num:num]
-      subseq = pattern
-      m = len(subseq)
-      n = len(seq)
-      i = 0
-      while i + m <= n:
-        j = m - 1
-        e = e_last = seq[i + j]
-        while True:
-          if e != subseq[j]:
-            i += skip_table[e_last]
-            break
-          if j == 0:
-            return prev_num + i
-          j -= 1
-          e = seq[i + j]
-
-  return func(pattern)
+  return day14_part2_func(pattern)
 
 
 check_eq(day14_part2('51589'), 9)
@@ -1909,8 +1930,54 @@ puzzle.verify(1, day15a_part1)  # ~800 ms.
 
 
 # %%
+# Using numba; optimized.
+
+@numba.njit
+def day15_adjacent_towards_opponent(grid, unit_yx, inrange):
+  # BFS from unit until yx in inrange; record all others at same distance.
+  next_queue = [unit_yx]
+  visited: set[tuple[int, int]] = set()
+  nearests: set[tuple[int, int]] = set()
+  for nearest_distance in range(10**8):
+    if nearests or not next_queue:
+      break
+    queue, next_queue = next_queue, []
+    for yx in queue:
+      y, x = yx
+      for yx2 in ((y - 1, x), (y, x - 1), (y, x + 1), (y + 1, x)):
+        if grid[yx2] == '.' and yx2 not in visited:
+          visited.add(yx2)
+          next_queue.append(yx2)
+          if yx2 in inrange:
+            nearests.add(yx2)
+  if not nearests:
+    return None  # No path to opponent.
+  nearest = min(nearests)
+
+  # BFS from nearest to unit; find unit neighbor with shortest distance.
+  next_queue = [nearest]
+  distances = {nearest: 0}
+  for distance in range(nearest_distance - 1):
+    queue, next_queue = next_queue, []
+    for yx in queue:
+      y, x = yx
+      for yx2 in ((y - 1, x), (y, x - 1), (y, x + 1), (y + 1, x)):
+        if grid[yx2] == '.' and yx2 not in distances:
+          remaining = abs(unit_yx[0] - yx2[0]) + abs(unit_yx[1] - yx2[1])
+          if distance + remaining <= nearest_distance:  # A*.
+            distances[yx2] = distance + 1
+            next_queue.append(yx2)
+
+  y, x = unit_yx
+  best = 10**8, (-1, -1)
+  for yx2 in ((y - 1, x), (y, x - 1), (y, x + 1), (y + 1, x)):
+    if grid[yx2] == '.' and yx2 in distances and (distances[yx2], yx2) < best:
+      best = distances[yx2], yx2
+  return best[1]
+
+
 def day15_part1(s, visualize=False, elf_attack_power=3,
-                fail_if_elf_dies=False):  # Using numba; optimized.
+                fail_if_elf_dies=False):
 
   @dataclasses.dataclass
   class Unit:
@@ -1944,49 +2011,6 @@ def day15_part1(s, visualize=False, elf_attack_power=3,
   warnings.simplefilter(
       'ignore', category=numba.core.errors.NumbaPendingDeprecationWarning)
 
-  @numba_njit(cache=True)
-  def adjacent_towards_opponent(grid, unit_yx, inrange):
-    # BFS from unit until yx in inrange; record all others at same distance.
-    next_queue = [unit_yx]
-    visited: set[tuple[int, int]] = set()
-    nearests: set[tuple[int, int]] = set()
-    for nearest_distance in range(10**8):
-      if nearests or not next_queue:
-        break
-      queue, next_queue = next_queue, []
-      for yx in queue:
-        y, x = yx
-        for yx2 in ((y - 1, x), (y, x - 1), (y, x + 1), (y + 1, x)):
-          if grid[yx2] == '.' and yx2 not in visited:
-            visited.add(yx2)
-            next_queue.append(yx2)
-            if yx2 in inrange:
-              nearests.add(yx2)
-    if not nearests:
-      return None  # No path to opponent.
-    nearest = min(nearests)
-
-    # BFS from nearest to unit; find unit neighbor with shortest distance.
-    next_queue = [nearest]
-    distances = {nearest: 0}
-    for distance in range(nearest_distance - 1):
-      queue, next_queue = next_queue, []
-      for yx in queue:
-        y, x = yx
-        for yx2 in ((y - 1, x), (y, x - 1), (y, x + 1), (y + 1, x)):
-          if grid[yx2] == '.' and yx2 not in distances:
-            remaining = abs(unit_yx[0] - yx2[0]) + abs(unit_yx[1] - yx2[1])
-            if distance + remaining <= nearest_distance:  # A*.
-              distances[yx2] = distance + 1
-              next_queue.append(yx2)
-
-    y, x = unit_yx
-    best = 10**8, (-1, -1)
-    for yx2 in ((y - 1, x), (y, x - 1), (y, x + 1), (y + 1, x)):
-      if grid[yx2] == '.' and yx2 in distances and (distances[yx2], yx2) < best:
-        best = distances[yx2], yx2
-    return best[1]
-
   images = []
   incomplete_round = False
   for round in itertools.count():
@@ -2015,7 +2039,7 @@ def day15_part1(s, visualize=False, elf_attack_power=3,
                    for yx in empty_adjacent_yxs(u.yx)}
         if not inrange:  # No accessible opponent.
           continue
-        best_adjacent = adjacent_towards_opponent(grid, unit.yx, inrange)
+        best_adjacent = day15_adjacent_towards_opponent(grid, unit.yx, inrange)
         if best_adjacent is None:
           continue
         # check_eq(grid[unit.yx], unit.ch)
@@ -3002,7 +3026,60 @@ else:
 
 
 # %%
-def day22(s, *, part2=False, pad=60, visualize=False):  # With numba.
+# With numba.
+
+@numba.njit
+def day22_dijkstra(grid, target_yx, visualize):
+  # https://levelup.gitconnected.com/dijkstra-algorithm-in-python-8f0e75e3f16e
+  TORCH = 1
+  distances = {}
+  # pylint: disable-next=consider-using-set-comprehension
+  visited = set([(0, 0, 0) for _ in range(0)])  # Typed empty set.
+  parents = {(0, 0, 0): (0, 0, 0)}  # Dummy entry for numba typing.
+  source_tyx = TORCH, 0, 0
+  target_tyx = TORCH, *target_yx
+  distances[source_tyx] = 0
+  pq = [(0, source_tyx)]
+  tool_change = np.array([[-1, 2, 1], [2, -1, 0], [1, 0, -1]])
+
+  while pq:
+    distance, node = heapq.heappop(pq)
+    if node in visited:
+      continue
+    visited.add(node)
+    if node == target_tyx:
+      break
+
+    def consider(node2, edge_cost):
+      if ~(node2 in visited):  # (Workaround for numba bug "not in".)
+        distance2 = distance + edge_cost
+        if distance2 < distances.get(node2, 10**8):
+          distances[node2] = distance2
+          heapq.heappush(pq, (distance2, node2))
+          if visualize:
+            parents[node2] = node
+
+    tool, y, x = node
+    if y > 0 and grid[y - 1, x] != tool:
+      consider((tool, y - 1, x), 1)
+    if x > 0 and grid[y, x - 1] != tool:
+      consider((tool, y, x - 1), 1)
+    if y < grid.shape[0] - 1 and grid[y + 1, x] != tool:
+      consider((tool, y + 1, x), 1)
+    if x < grid.shape[1] - 1 and grid[y, x + 1] != tool:
+      consider((tool, y, x + 1), 1)
+    consider((tool_change[tool, grid[y, x]], y, x), 7)
+  else:
+    assert False
+
+  path = [node]
+  while node in parents:
+    node = parents[node]
+    path.append(node)
+  return distance, path[::-1] if visualize else None
+
+
+def day22(s, *, part2=False, pad=60, visualize=False):
   lines = s.splitlines()
   depth = int(hh.re_groups(r'^depth: (\d+)$', lines[0])[0])
   target_yx = tuple(map(int, hh.re_groups(r'^target: (\d+),(\d+)$', lines[1])))[::-1]
@@ -3025,59 +3102,9 @@ def day22(s, *, part2=False, pad=60, visualize=False):  # With numba.
     shape = tuple(np.array(target_yx) + 1)
     return construct_grid(shape).sum()
 
-  @numba_njit(cache=True)
-  def dijkstra(grid, target_yx, visualize):
-    # https://levelup.gitconnected.com/dijkstra-algorithm-in-python-8f0e75e3f16e
-    TORCH = 1
-    distances = {}
-    # pylint: disable-next=consider-using-set-comprehension
-    visited = set([(0, 0, 0) for _ in range(0)])  # Typed empty set.
-    parents = {(0, 0, 0): (0, 0, 0)}  # Dummy entry for numba typing.
-    source_tyx = TORCH, 0, 0
-    target_tyx = TORCH, *target_yx
-    distances[source_tyx] = 0
-    pq = [(0, source_tyx)]
-    tool_change = np.array([[-1, 2, 1], [2, -1, 0], [1, 0, -1]])
-
-    while pq:
-      distance, node = heapq.heappop(pq)
-      if node in visited:
-        continue
-      visited.add(node)
-      if node == target_tyx:
-        break
-
-      def consider(node2, edge_cost):
-        if ~(node2 in visited):  # (Workaround for numba bug "not in".)
-          distance2 = distance + edge_cost
-          if distance2 < distances.get(node2, 10**8):
-            distances[node2] = distance2
-            heapq.heappush(pq, (distance2, node2))
-            if visualize:
-              parents[node2] = node
-
-      tool, y, x = node
-      if y > 0 and grid[y - 1, x] != tool:
-        consider((tool, y - 1, x), 1)
-      if x > 0 and grid[y, x - 1] != tool:
-        consider((tool, y, x - 1), 1)
-      if y < grid.shape[0] - 1 and grid[y + 1, x] != tool:
-        consider((tool, y + 1, x), 1)
-      if x < grid.shape[1] - 1 and grid[y, x + 1] != tool:
-        consider((tool, y, x + 1), 1)
-      consider((tool_change[tool, grid[y, x]], y, x), 7)
-    else:
-      assert False
-
-    path = [node]
-    while node in parents:
-      node = parents[node]
-      path.append(node)
-    return distance, path[::-1] if visualize else None
-
   shape = tuple(np.array(target_yx) + pad)
   grid = construct_grid(shape)
-  distance, path = dijkstra(grid, target_yx, visualize)
+  distance, path = day22_dijkstra(grid, target_yx, visualize)
   if visualize:
     cmap = {0: (150, 0, 0), 1: (0, 150, 0), 2: (0, 0, 150)}
     image = np.array([cmap[e] for e in grid.ravel()], np.uint8)
