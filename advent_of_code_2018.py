@@ -634,12 +634,16 @@ def day6(s, *, part2=False, max_sum=10_000, visualize=False):
 
 check_eq(day6(s1), 17)
 puzzle.verify(1, day6)  # ~135 ms.
+
+# %%
 _ = day6(puzzle.input, visualize=True)
 
 # %%
 day6_part2 = functools.partial(day6, part2=True)
 check_eq(day6_part2(s1, max_sum=32), 16)
 puzzle.verify(2, day6_part2)  # ~75 ms.
+
+# %%
 _ = day6_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
@@ -1059,6 +1063,7 @@ day10_part2 = functools.partial(day10, part2=True)
 check_eq(day10_part2(s1), 3)
 puzzle.verify(2, day10_part2)  # ~3 ms.
 
+# %%
 _ = day10(puzzle.input, visualize=True)
 
 # %% [markdown]
@@ -1130,6 +1135,8 @@ day11_part2 = functools.partial(day11, part2=True)
 check_eq(day11_part2('18'), '90,269,16')
 check_eq(day11_part2('42'), '232,251,12')
 puzzle.verify(2, day11_part2)  # ~70 ms.
+
+# %%
 _ = day11_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
@@ -1220,6 +1227,8 @@ puzzle.verify(1, day12)  # ~2 ms.
 
 day12_part2 = functools.partial(day12, part2=True)
 puzzle.verify(2, day12_part2)  # ~20 ms.
+
+# %%
 _ = day12_part2(puzzle.input, visualize=True)
 
 # %% [markdown]
@@ -2687,6 +2696,8 @@ puzzle.verify(1, day20)  # ~840 ms.
 # %%
 day20_part2 = functools.partial(day20, part2=True, visualize=False)
 puzzle.verify(2, day20_part2)  # ~840 ms.
+
+# %%
 _ = day20_part2(puzzle.input, visualize=True)
 
 # %%
@@ -3125,6 +3136,8 @@ puzzle.verify(1, day22)  # ~14 ms.
 day22_part2 = functools.partial(day22, part2=True)
 check_eq(day22_part2(s1), 45)  # 2.4 s for numba jit compilation!
 puzzle.verify(2, day22_part2)  # ~240 ms (~1050 ms without numba)
+
+# %%
 _ = day22_part2(puzzle.input, visualize=True)  # ~1 s.
 
 # %% [markdown]
