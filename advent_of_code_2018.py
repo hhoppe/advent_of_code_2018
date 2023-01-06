@@ -1505,7 +1505,7 @@ def day14b_part2_func(pattern):
 
 
 def day14b_part2(s):
-  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+  pattern = np.array(list(s.strip()), np.uint8)
   return day14b_part2_func(pattern)
 
 
@@ -1564,7 +1564,7 @@ def day14c_part2_func(pattern: np.ndarray) -> int:
 
 
 def day14c_part2(s):
-  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+  pattern = np.array(list(s.strip()), np.uint8)
   return day14c_part2_func(pattern)
 
 
@@ -1651,7 +1651,7 @@ def day14d_part2_func(pattern: np.ndarray) -> int:
 
 
 def day14d_part2(s):
-  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+  pattern = np.array(list(s.strip()), np.uint8)
   return day14d_part2_func(pattern)
 
 
@@ -1664,26 +1664,14 @@ puzzle.verify(2, day14d_part2)  # ~250 ms is slower than naive algorithm.
 
 # %%
 # Fastest, using Boyer-Moore-Horspool subsequence search.
-
 @numba.njit
 def day14_part2_func(pattern: np.ndarray) -> int:
-
-  # Precompute skips for Boyer-Moore-Horspool algorithm; see
-  # https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm
-  def boyer_moore_horspool_skip_table(subseq, alphabet_size):
-    table = np.full(alphabet_size, len(subseq))
-    for i in range(len(subseq) - 1):
-      table[subseq[i]] = len(subseq) - 1 - i
-    return table
-
   max_recipes = 100_000_000
   recipes = np.empty(max_recipes, np.uint8)
   num = 2
-  recipes[0] = 3
-  recipes[1] = 7
+  recipes[:num] = 3, 7
   index0, index1 = 0, 1
   batch_size = 1000
-  skip_table = boyer_moore_horspool_skip_table(pattern, 10)
 
   while True:
     assert num + batch_size * 2 < max_recipes
@@ -1707,27 +1695,13 @@ def day14_part2_func(pattern: np.ndarray) -> int:
       if index1 >= num:
         index1 %= num
 
-    # Find pattern in new batch results using Boyer-Moore-Horspool.
-    seq = recipes[prev_num:num]
-    subseq = pattern
-    m = len(subseq)
-    n = len(seq)
-    i = 0
-    while i + m <= n:
-      j = m - 1
-      e = e_last = seq[i + j]
-      while True:
-        if e != subseq[j]:
-          i += skip_table[e_last]
-          break
-        if j == 0:
-          return prev_num + i
-        j -= 1
-        e = seq[i + j]
+    i = hh.boyer_subsequence_find(recipes[prev_num:num], pattern)
+    if i >= 0:
+      return prev_num + i
 
 
 def day14_part2(s):
-  pattern = np.array([int(ch) for ch in s.strip()], np.uint8)
+  pattern = np.array(list(s.strip()), np.uint8)
   return day14_part2_func(pattern)
 
 
@@ -2026,7 +2000,7 @@ def day15_part1(s, visualize=False, elf_attack_power=3,
     if visualize:
       cmap = {'.': (250,) * 3, '#': (0, 0, 0),
               'E': (255, 0, 0), 'G': (0, 190, 0)}
-      image = np.array([cmap[e] for e in grid.ravel()], np.uint8)
+      image = np.array([cmap[e] for e in grid.flat], np.uint8)
       image = image.reshape(*grid.shape, 3)
       image = image.repeat(5, axis=0).repeat(5, axis=1)
       images.append(image)
@@ -2393,7 +2367,7 @@ def day18(s, *, num_minutes=10, part2=False, visualize=False):
   for minute in itertools.count():
     if visualize:
       cmap = {'.': (200, 0, 0), '|': (0, 200, 0), '#': (0, 0, 200)}
-      image = np.array([cmap[e] for e in grid.ravel()], np.uint8)
+      image = np.array([cmap[e] for e in grid.flat], np.uint8)
       image = image.reshape(*grid.shape, 3).repeat(3, axis=0).repeat(3, axis=1)
       images.append(image)
     config = grid.tobytes()  # Hashable; ''.join(grid.flat) is slower.
@@ -3118,7 +3092,7 @@ def day22(s, *, part2=False, pad=60, visualize=False):
   distance, path = day22_dijkstra(grid, target_yx, visualize)
   if visualize:
     cmap = {0: (150, 0, 0), 1: (0, 150, 0), 2: (0, 0, 150)}
-    image = np.array([cmap[e] for e in grid.ravel()], np.uint8)
+    image = np.array([cmap[e] for e in grid.flat], np.uint8)
     image = image.reshape(*grid.shape, 3)
     image2 = image.copy()
     for node in path:
@@ -3670,7 +3644,7 @@ puzzle.verify(1, day25a)  # ~740 ms.
 
 # %%
 def day25(s):  # Faster version, using numpy to identify the graph edges.
-  points = np.array([[int(t) for t in l.split(',')] for l in s.splitlines()])
+  points = np.array([line.split(',') for line in s.splitlines()], int)
   union_find = hh.UnionFind[int]()
   edges = abs(points[None] - points.reshape((-1, 1, 4))).sum(axis=-1) <= 3
   for i, j in np.argwhere(edges):
